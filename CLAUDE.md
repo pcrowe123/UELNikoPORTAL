@@ -148,6 +148,11 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   for `authenticated` and lose it for `anon`; the linter still warns about the former and that
   warning is expected. Note `revoke ... from public` also strips what a role inherits through
   PUBLIC, so the grant has to be given back to `authenticated` explicitly.
+- **Supabase silently ignores a `redirect_to` it has not been told to allow.** `create-user.mjs`
+  sends people to `<APP_URL>/reset-password`; unless that address is in Authentication → URL
+  Configuration → Redirect URLs, Supabase falls back to the Site URL — `http://localhost:3000` on a
+  new project — and the invitation arrives looking perfectly fine while taking the person nowhere.
+  It does not warn, and the failure looks like a broken app rather than a missing setting.
 - The workspace guard reads the **text** of an `execute_sql` call, not its meaning, so a read-only
   `SELECT` that merely contains the word EXECUTE (say, `has_function_privilege(..., 'EXECUTE')`) is
   blocked as a write. Ask for `proacl` instead and the same question gets answered.

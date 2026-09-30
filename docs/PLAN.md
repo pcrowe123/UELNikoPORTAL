@@ -68,7 +68,33 @@ password in `.env` as `SMTP_PASS` so the scripts can see it.
 Until this is done, invitation mail goes through Supabase's own sender, which is rate-limited to a
 few messages an hour. Fine for testing with one address; not enough to invite a dozen people.
 
-**2. The first administrator — once step 1 is done.** Nobody can sign in until this is run, and it
+**2. Tell Supabase Auth where the portal lives.** Dashboard → Authentication → URL Configuration:
+
+| | |
+|---|---|
+| Site URL | `https://uelnikoportal.com` |
+| Redirect URLs | `https://uelnikoportal.com/**` (add `http://localhost:5173/**` for development) |
+
+This is easy to skip and annoying to debug. `scripts/create-user.mjs` asks Supabase to send people
+to `<APP_URL>/reset-password`, and Supabase **refuses a redirect it has not been told to allow** —
+it silently falls back to the Site URL instead, which is `http://localhost:3000` on a new project.
+The invitation still arrives; it just takes the person somewhere that is not the portal.
+
+**3. Confirm the Cloudflare zone, then deploy.** `wrangler.jsonc` claims `uelnikoportal.com` and
+`www.uelnikoportal.com` with `custom_domain: true`, which makes Cloudflare create the DNS records
+and the certificate on deploy — but **only if the zone is already in this Cloudflare account**. If
+the domain is registered somewhere else, move the nameservers to Cloudflare first, or take the two
+`routes` out and use the workers.dev address to begin with. Then, from the office PC:
+
+```
+npm run deploy
+```
+
+Deploy **before** inviting anybody. An invitation link points at `uelnikoportal.com`, and Supabase
+expires it after 24 hours — so sending one while the domain still serves nothing means the first
+thing Patrick does with the portal is click a link to a site that does not exist yet.
+
+**4. The first administrator — last, not first.** Nobody can sign in until this is run, and it
 cannot be done from the app, because there is no signup page (D4).
 
 Decided with Patrick, 30 September 2026: the account is **`pcrowe123@gmail.com`**, and the
@@ -83,17 +109,7 @@ It **sends a real email**. Patrick gets a link and chooses his own password; nob
 it. That address is then his portal login — unrelated to his accounts on any of the seven
 applications (D2).
 
-**3. Confirm the Cloudflare zone, then deploy.** `wrangler.jsonc` claims `uelnikoportal.com` and
-`www.uelnikoportal.com` with `custom_domain: true`, which makes Cloudflare create the DNS records
-and the certificate on deploy — but **only if the zone is already in this Cloudflare account**. If
-the domain is registered somewhere else, move the nameservers to Cloudflare first, or take the two
-`routes` out and use the workers.dev address to begin with. Then, from the office PC:
-
-```
-npm run deploy
-```
-
-**4. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
+**5. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
 written for them and explains the one thing worth understanding — that the portal password is not
 the same as their password for any of the applications.
 
