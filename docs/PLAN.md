@@ -56,6 +56,14 @@ immediately even holding a valid token (SE-02).
   - https://www.uelnikoportal.com
   - https://uelnikoportal.pcrowe123.workers.dev (keeps working, and is not DNS-blocked in the
     office — see the note at the end)
+- **Auth redirects** — Site URL and the redirect allow-list set, 30 September 2026. Both
+  `https://uelnikoportal.com/**` and `https://uelnikoportal.pcrowe123.workers.dev/**` were proved
+  honoured with `admin/generate_link` before any real invitation was sent.
+- **First administrator invited** — `pcrowe123@gmail.com`, role `admin`, 30 September 2026. The
+  invitation points at the **workers.dev** address rather than the custom domain, because the office
+  FortiGate is still blocking `uelnikoportal.com` and the link would otherwise land on a block page.
+  Later invitations can use the custom domain once that clears; `APP_URL` in `.env` decides, and a
+  reset asked for from the login page follows whichever address the person is already on.
 - **GitHub `pcrowe123/UELNikoPORTAL`** — created, and the first commit is pushed to `main`
   (30 September 2026). Mind the casing: the repository is `UELNikoPORTAL`. The mixed-case spelling
   is a GitHub redirect and works, but `origin` is set to the canonical name so nothing depends on
@@ -63,37 +71,26 @@ immediately even holding a valid token (SE-02).
 
 ## What is waiting on Patrick
 
-**1. Tell Supabase Auth where the portal lives.**
-https://supabase.com/dashboard/project/zeujzuxkjozlelayerkz/auth/url-configuration
+**1. Set the password in the invitation email**, sign in, and have a look. The email is from
+`noreply@uel.ie`; if it is not in the inbox, try the spam folder — `uel.ie` is verified in Resend
+but a first message from a new sending address often lands there once.
 
-| | |
-|---|---|
-| Site URL | `https://uelnikoportal.com` |
-| Redirect URLs | `https://uelnikoportal.com/**` (add `http://localhost:5173/**` for development) |
+Sign in at **https://uelnikoportal.pcrowe123.workers.dev** while the office block lasts.
 
-This is easy to skip and annoying to debug. `scripts/create-user.mjs` asks Supabase to send people
-to `<APP_URL>/reset-password`, and Supabase **refuses a redirect it has not been told to allow** —
-it silently falls back to the Site URL instead, which is `http://localhost:3000` on a new project.
-The invitation still arrives; it just takes the person somewhere that is not the portal.
-
-**2. The first administrator — last, not first.** Nobody can sign in until this is run, and it
-cannot be done from the app, because there is no signup page (D4).
-
-Decided with Patrick, 30 September 2026: the account is **`pcrowe123@gmail.com`**, and the
-invitation waits until Resend is configured so it arrives from `noreply@uel.ie` rather than
-Supabase's rate-limited sender.
-
-```
-node scripts/create-user.mjs --email pcrowe123@gmail.com --name "Patrick Crowe" --role admin
-```
-
-It **sends a real email**. Patrick gets a link and chooses his own password; nobody else ever knows
-it. That address is then his portal login — unrelated to his accounts on any of the seven
-applications (D2).
-
-**3. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
+**2. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
 written for them and explains the one thing worth understanding — that the portal password is not
 the same as their password for any of the applications.
+
+```
+node scripts/create-user.mjs --email them@uel.ie --name "Their Name" --role member
+```
+
+While the FortiGate is still blocking the custom domain, put the workers.dev address in front of
+that command so their link works too:
+
+```
+APP_URL=https://uelnikoportal.pcrowe123.workers.dev node scripts/create-user.mjs --email …
+```
 
 ## Worth doing later
 

@@ -156,6 +156,13 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   `/project/<ref>/auth/smtp` and `/project/<ref>/auth/url-configuration`. Plenty of older notes and
   guides say Project Settings → Authentication; that layout is gone. Link the paths, not the
   clicks.
+- **`admin/generate_link` is the way to test an invitation without sending one.** It builds the
+  link and returns it rather than emailing it, and the `redirect_to` in that link shows whether
+  Supabase honoured the address or silently substituted the Site URL — so the allow-list can be
+  proved before a real one-shot email goes to a real person. Two traps: it **creates the user** as a
+  side effect, and it returns the user's fields at the **top level**, not nested under `user` as
+  `POST /admin/users` does. Reading `out.user.id` gets `undefined`, the cleanup skips, and the
+  throwaway accounts stay in `auth.users`.
 - **Supabase silently ignores a `redirect_to` it has not been told to allow.** `create-user.mjs`
   sends people to `<APP_URL>/reset-password`; unless that address is in Authentication → URL
   Configuration → Redirect URLs, Supabase falls back to the Site URL — `http://localhost:3000` on a
