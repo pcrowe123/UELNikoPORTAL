@@ -252,6 +252,34 @@ a:hover, .link:hover { text-decoration: underline; }
 .tile-broken { cursor: default; background: #fdf8ec; border-color: #f0dcae; }
 .tile-broken:hover { transform: none; box-shadow: var(--shadow); border-color: #f0dcae; }
 
+/* An application this person has not been given (D18). Present, legible and obviously unavailable:
+   they should be able to see it exists and ask for it, which is the point of blocking rather than
+   hiding. It is a <button>, so the text alignment the tile layout assumes has to be restored. */
+.tile-locked {
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: not-allowed;
+  background: repeating-linear-gradient(
+    135deg,
+    #f7f8fa 0 10px,
+    #f1f3f6 10px 20px
+  );
+  border-style: dashed;
+  border-color: #c9d0da;
+}
+.tile-locked:hover {
+  transform: none;
+  box-shadow: var(--shadow);
+  border-color: #b3bcc9;
+}
+/* The badge keeps its colour but loses its confidence, so the grid still reads as one set. */
+.tile-locked .tile-badge { opacity: 0.45; }
+.tile-locked .tile-words b { color: var(--muted); }
+.tile-locked .tile-tagline { color: #9aa4b1; }
+.tile-locked .tile-host { font-family: var(--font); font-weight: 600; color: var(--warn); }
+.tile-locked .tile-go { font-size: 15px; opacity: 0.75; }
+
 /* ---------------------------------------------------------------- controls */
 
 .btn {

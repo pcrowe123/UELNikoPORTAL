@@ -1,22 +1,31 @@
 // One application on the landing page.
 //
-// It is a real anchor, not a button with an onClick, so that middle-click, ctrl-click and
-// "copy link address" all behave the way people expect of a launcher.
+// When the person may open it, it is a real anchor, not a button with an onClick, so that
+// middle-click, ctrl-click and "copy link address" all behave the way people expect of a launcher.
 //
 // `rel="noopener noreferrer"` is not decoration. Without `noopener` the page that opens keeps a
 // handle on this one through `window.opener` and can navigate it somewhere else; without
 // `noreferrer` the portal's address is handed to the site in a header it has no need for (SE-04).
+//
+// When they may not, it is deliberately NOT an anchor: there is no href to middle-click and no
+// address to copy from the page. That is a courtesy, not a defence - the address is still in the
+// JavaScript, and the real gate is the application's own login (D2, D18).
 
 import { hostOf, initials, safeHref, type LinkLike } from '../engine/links';
 
 export function LinkCard({
   link,
   newTab,
+  locked,
   onLaunch,
+  onBlocked,
 }: {
   link: LinkLike;
   newTab: boolean;
+  /** Set when this person has not been given an `invite` tile (D18). */
+  locked?: boolean;
   onLaunch: (link: LinkLike) => void;
+  onBlocked?: (link: LinkLike) => void;
 }) {
   const href = safeHref(link.url);
   const badge = initials(link.name);
@@ -36,6 +45,29 @@ export function LinkCard({
           <span className="tile-host bad">This tile has no usable web address. Ask an administrator.</span>
         </div>
       </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <button
+        type="button"
+        className="tile tile-locked"
+        onClick={() => onBlocked?.(link)}
+        aria-label={`${link.name} — you have not been given access`}
+      >
+        <span className="tile-badge" style={{ background: link.colour }} aria-hidden="true">
+          {badge}
+        </span>
+        <div className="tile-words">
+          <b>{link.name}</b>
+          <span className="tile-tagline">{link.tagline}</span>
+          <span className="tile-host">No access yet</span>
+        </div>
+        <span className="tile-go" aria-hidden="true">
+          🔒
+        </span>
+      </button>
     );
   }
 

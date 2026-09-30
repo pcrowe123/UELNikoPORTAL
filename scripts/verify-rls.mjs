@@ -281,6 +281,61 @@ try {
     ? pass()
     : fail(`the log was editable: patch ${rewrite.status}, delete ${wiped.status}`);
 
+  // Access grants (D18). What is enforced here is who may GRANT - the padlock on the landing page
+  // is only an appearance, and deliberately so. A member quietly granting themselves is what would
+  // make the Admin screen a lie, so that is the thing worth proving.
+  step('a member cannot grant themselves an application (D18)');
+  const anyLink = await api('/rest/v1/portal_links?select=id&limit=1', { token: member.token });
+  const linkId = anyLink.body?.[0]?.id;
+  const selfGrant = await api('/rest/v1/link_access', {
+    token: member.token,
+    method: 'POST',
+    body: { link_id: linkId, user_id: member.id },
+  });
+  selfGrant.status === 401 || selfGrant.status === 403
+    ? pass()
+    : fail(`a member granted themselves access: ${selfGrant.status} ${JSON.stringify(selfGrant.body)}`);
+
+  step('an administrator can grant, and the member then sees the grant');
+  const grant = await api('/rest/v1/link_access', {
+    token: boss.token,
+    method: 'POST',
+    body: { link_id: linkId, user_id: member.id, granted_by: boss.id },
+  });
+  const memberSees = await api(`/rest/v1/link_access?select=link_id`, { token: member.token });
+  grant.ok && Array.isArray(memberSees.body) && memberSees.body.some((r) => r.link_id === linkId)
+    ? pass()
+    : fail(`grant ${grant.status}, member saw ${JSON.stringify(memberSees.body)}`);
+
+  step('a member cannot see anybody else\'s grants');
+  const others = await api(`/rest/v1/link_access?select=user_id&user_id=neq.${member.id}`, {
+    token: member.token,
+  });
+  Array.isArray(others.body) && others.body.length === 0
+    ? pass()
+    : fail(`a member read somebody else's grants: ${JSON.stringify(others.body)}`);
+
+  step('a member cannot revoke a grant either');
+  const revoke = await api(`/rest/v1/link_access?link_id=eq.${linkId}&user_id=eq.${member.id}`, {
+    token: member.token,
+    method: 'DELETE',
+  });
+  const stillGranted = await api('/rest/v1/link_access?select=link_id', { token: member.token });
+  Array.isArray(stillGranted.body) && stillGranted.body.some((r) => r.link_id === linkId)
+    ? pass()
+    : fail(`a member revoked their own grant: ${revoke.status}`);
+
+  step('the database refuses an access mode that is not one of the two');
+  const badMode = await api(`/rest/v1/portal_links?id=eq.${linkId}`, {
+    token: boss.token,
+    method: 'PATCH',
+    body: { access_mode: 'sometimes' },
+    headers: { Prefer: 'return=representation' },
+  });
+  !badMode.ok && JSON.stringify(badMode.body).includes('portal_links_access_mode')
+    ? pass()
+    : fail(`expected the access_mode check to refuse it, got ${badMode.status} ${JSON.stringify(badMode.body)}`);
+
   // SE-02. The session is still valid; the profile is not.
   step('a deactivated account loses its access at once (SE-02)');
   await admin('/rest/v1/profiles?id=eq.' + boss.id, {

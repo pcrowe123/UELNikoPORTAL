@@ -5,6 +5,7 @@
 // Names here are camelCase. The database is snake_case, and `supabase.ts` is the only file that
 // knows both (D8).
 
+import type { AccessMode } from '../engine/access';
 import type { LinkLike } from '../engine/links';
 
 /**
@@ -38,6 +39,8 @@ export function isAdmin(user: User | null): boolean {
 
 /** A tile on the landing page. */
 export interface PortalLink extends LinkLike {
+  /** `everyone`, or `invite` for one that is padlocked unless a person has been given it (D18). */
+  accessMode: AccessMode;
   createdAt: string;
   updatedAt: string;
 }
@@ -89,8 +92,19 @@ export interface Backend {
   /** Retires the tile (D6). Deletes it outright only if nobody has ever opened it. */
   removeLink(id: string): Promise<{ deleted: boolean }>;
 
+  /**
+   * The ids of the `invite` tiles the signed-in person has been given. Everything else they can
+   * open is open to everybody, so this is all the landing page needs (D18).
+   */
+  listMyAccess(): Promise<string[]>;
+
   listUsers(): Promise<User[]>;
   updateUser(id: string, change: { role?: Role; isActive?: boolean; displayName?: string }): Promise<User>;
+
+  /** The tile ids somebody has been granted. Administrators only. */
+  listAccessFor(userId: string): Promise<string[]>;
+  /** Replaces somebody's grants with exactly this set. Administrators only. */
+  setAccessFor(userId: string, linkIds: string[]): Promise<void>;
 
   getSettings(): Promise<AppSettings>;
   saveSettings(settings: AppSettings): Promise<AppSettings>;

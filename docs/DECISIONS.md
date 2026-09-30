@@ -22,7 +22,10 @@ access control". A portal that held credentials would become the most attractive
 network to break into, and would need to be built to a completely different standard.
 *Confirmed by the brief, 30 September 2026.*
 
-**D3 — Two roles, and everyone sees every tile.** `admin` and `member`. There is no per-person tile
+**D3 — Two roles, and everyone sees every tile.** *(Superseded in part by D18 on 30 September 2026:
+tiles can now be marked invitation-only. The two roles, and the default of everyone seeing
+everything, still stand. Kept as written because the reasoning is still why the default is what it
+is.)* `admin` and `member`. There is no per-person tile
 visibility: anyone who can sign in to the portal sees all seven applications. A tile somebody has
 no account for simply fails at that application's own login, which is where it should fail.
 
@@ -146,3 +149,38 @@ The Install button hides itself rather than going grey when there is nothing to 
 disabled button invites a second and third click. On iOS it opens instructions instead: Apple does
 not implement `beforeinstallprompt` and does not let a site install itself, so the honest thing is
 to say where the Share menu is. *Assumed, 30 September 2026.*
+
+**D18 — Per-application access: padlocked, not hidden, and a signpost rather than a lock.**
+Patrick asked for applications to be "blocked out" for people without access, and for two more
+tiles (SQL and MRP). D3 had settled on everyone seeing everything; this revisits that, narrowly.
+
+Each tile carries an `access_mode`: `everyone` (the default, and what all seven existing tiles are)
+or `invite`. An `invite` tile is shown to everybody but drawn padlocked and greyed for anyone who
+has not been granted it, and it is rendered as a `<button>` rather than an `<a>`, so there is no
+href to middle-click and no address to copy out of the page.
+
+**Blocked out rather than hidden**, because somebody who cannot see an application cannot ask for
+it. A padlocked tile is self-documenting: it says the thing exists, that you have not got it, and
+who to ask. A hidden one just makes the portal look different on different desks, which generates
+questions rather than answering them.
+
+**Open unless marked restricted**, chosen by Patrick over the alternatives. It means shipping this
+changed nothing for anybody: all seven tiles stayed `everyone`, and restriction is applied
+deliberately where it is wanted. The opposite default would have needed every existing person
+granted all seven tiles before anyone could work.
+
+**Administrators are never padlocked.** One can open the Access dialog and tick themselves in two
+clicks, so a lock in front of the person holding the key is theatre. Better to be plain about it.
+
+**What is, and is not, enforced.** Only an administrator may grant or revoke — that is a real Row
+Level Security policy, proved by `npm run verify:rls`, and it is what stops the Admin screen being
+a lie. The padlock itself is **not** enforcement: the tile's address is readable by any signed-in
+person through the API, because the landing page has to be able to draw the tile at all. Anybody
+determined could paste the address into their browser and would then meet that application's own
+login, which is where access has always actually been decided (D2, and the brief's own position
+that each site's login "remains the primary access control").
+
+That distinction is written into the migration, the engine, the People dialog and the user guide,
+because a control that looks like security and is not is worse than no control at all. If something
+must genuinely be kept from somebody, it has to be kept from them in that application, not here.
+*Decided with Patrick, 30 September 2026.*

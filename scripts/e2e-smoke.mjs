@@ -558,6 +558,131 @@ async function main() {
     ).catch(() => null);
     gone ? pass() : fail('the never-opened tile was not removed outright');
 
+    // Access control, end to end (D18). The demo administrator can open everything by definition,
+    // so this proves the mechanism on a Member instead.
+    step('a tile can be set to "By invitation"');
+    await evaluate(`
+      const row = [...document.querySelectorAll('table.table tbody tr')]
+        .find((tr) => tr.textContent.includes('UEL Niko Booking'));
+      [...row.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Edit').click();
+      return true;
+    `);
+    await waitFor('the dialog', () => evaluate('return !!document.querySelector("#link-access")'));
+    await evaluate(`
+      const el = document.querySelector('#link-access');
+      Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value').set.call(el, 'invite');
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      document.querySelector('.modal-foot .btn-primary').click();
+      return true;
+    `);
+    const restricted = await waitFor('the pill to change', () =>
+      evaluate(`
+        const row = [...document.querySelectorAll('table.table tbody tr')]
+          .find((tr) => tr.textContent.includes('UEL Niko Booking'));
+        return row && row.textContent.includes('By invitation') ? true : null;
+      `),
+    ).catch(() => null);
+    restricted ? pass() : fail('the tile did not switch to By invitation');
+
+    step('an administrator still sees it unlocked (D18)');
+    await evaluate(`
+      [...document.querySelectorAll('.topbar nav a')].find((a) => a.textContent.includes('Applications')).click();
+      return true;
+    `);
+    await waitFor('the tiles', () => evaluate('return !!document.querySelector(".tiles .tile")'));
+    const adminSees = await evaluate(`
+      const tile = [...document.querySelectorAll('.tile')]
+        .find((t) => t.textContent.includes('UEL Niko Booking'));
+      return { locked: tile.classList.contains('tile-locked'), tag: tile.tagName };
+    `);
+    adminSees.locked === false && adminSees.tag === 'A'
+      ? pass()
+      : fail(`an administrator was locked out of a tile they can grant themselves: ${JSON.stringify(adminSees)}`);
+
+    // The demo backend's access rules are the same code the real one uses, so demoting the demo
+    // user to Member is enough to see a real padlock.
+    step('a member sees it padlocked, and it is not a link');
+    await evaluate(`
+      [...document.querySelectorAll('.topbar nav a')].find((a) => a.textContent.includes('Admin')).click();
+      return true;
+    `);
+    await waitFor('the admin screen', () => evaluate('return !!document.querySelector(".tabs")'));
+    await evaluate(`
+      [...document.querySelectorAll('.tabs button')].find((b) => b.textContent.trim() === 'People').click();
+      return true;
+    `);
+    await waitFor('the people tab', () =>
+      evaluate('return document.body.innerText.includes("create-user.mjs") ? true : null'),
+    );
+    await evaluate(`
+      const select = document.querySelector('table.table tbody select');
+      Object.getOwnPropertyDescriptor(select.constructor.prototype, 'value').set.call(select, 'member');
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    `);
+    await waitFor('the demotion to take', () =>
+      evaluate(`
+        const nav = [...document.querySelectorAll('.topbar nav a')];
+        return nav.some((a) => a.textContent.includes('Admin')) ? null : true;
+      `),
+    );
+    const memberSees = await waitFor('the padlocked tile', () =>
+      evaluate(`
+        const tile = [...document.querySelectorAll('.tile')]
+          .find((t) => t.textContent.includes('UEL Niko Booking'));
+        if (!tile) return null;
+        return {
+          locked: tile.classList.contains('tile-locked'),
+          tag: tile.tagName,
+          href: tile.getAttribute('href'),
+          says: tile.textContent.includes('No access yet'),
+        };
+      `),
+    ).catch(() => null);
+    memberSees &&
+    memberSees.locked === true &&
+    memberSees.tag === 'BUTTON' &&
+    memberSees.href === null &&
+    memberSees.says === true
+      ? pass()
+      : fail(`expected a padlocked non-link tile, saw ${JSON.stringify(memberSees)}`);
+
+    step('the other tiles are still open to that member');
+    const stillOpen = await evaluate(`
+      const tiles = [...document.querySelectorAll('.tile')];
+      return {
+        total: tiles.length,
+        locked: tiles.filter((t) => t.classList.contains('tile-locked')).length,
+      };
+    `);
+    stillOpen.total === 7 && stillOpen.locked === 1
+      ? pass()
+      : fail(`expected 7 tiles with exactly 1 padlocked, saw ${JSON.stringify(stillOpen)}`);
+
+    step('tapping a padlocked tile explains rather than doing nothing');
+    // Toasts from earlier steps live for a few seconds, and one of them was being read as this
+    // step's answer. Clear the board first so what is measured is what this click produced.
+    await evaluate(`
+      document.querySelectorAll('.toast button').forEach((b) => b.click());
+      return true;
+    `);
+    await waitFor('the toasts to clear', () =>
+      evaluate('return document.querySelector(".toast") ? null : true'),
+    );
+    await evaluate(`
+      [...document.querySelectorAll('.tile-locked')][0].click();
+      return true;
+    `);
+    const explained = await waitFor('the message', () =>
+      evaluate(`
+        const toast = document.querySelector('.toast');
+        return toast ? toast.textContent : null;
+      `),
+    ).catch(() => null);
+    explained && /administrator/i.test(explained)
+      ? pass()
+      : fail(`expected an explanation, saw ${JSON.stringify(explained)}`);
+
     step('the landing page is back to the seven seeded applications');
     await evaluate(`
       [...document.querySelectorAll('.topbar nav a')].find((a) => a.textContent.includes('Applications')).click();

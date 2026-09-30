@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/Modal';
+import { ACCESS_DESCRIPTIONS, ACCESS_LABELS, type AccessMode } from '../../engine/access';
 import { useToast } from '../../components/Toast';
 import {
   describeLinkProblem,
@@ -19,6 +20,7 @@ const BLANK: NewPortalLink = {
   tagline: '',
   url: '',
   colour: '#0f4c81',
+  accessMode: 'everyone',
   sortOrder: 99,
   isActive: true,
 };
@@ -64,6 +66,7 @@ export function LinksTab() {
         url: link.url,
         colour: link.colour,
         sortOrder: link.sortOrder,
+        accessMode: link.accessMode,
         isActive: link.isActive,
       },
     });
@@ -159,6 +162,7 @@ export function LinksTab() {
                   <th>Name</th>
                   <th>Address</th>
                   <th>Short name</th>
+                  <th>Who</th>
                   <th>On the portal</th>
                   <th />
                 </tr>
@@ -174,6 +178,11 @@ export function LinksTab() {
                     </td>
                     <td className="small">{hostOf(link.url) || <span className="bad">unusable</span>}</td>
                     <td className="small mono">{link.slug}</td>
+                    <td>
+                      <span className={link.accessMode === 'invite' ? 'pill pill-warn' : 'pill'}>
+                        {link.accessMode === 'invite' ? '🔒 By invitation' : 'Everyone'}
+                      </span>
+                    </td>
                     <td>
                       <span className={link.isActive ? 'pill pill-ok' : 'pill'}>
                         {link.isActive ? 'Shown' : 'Hidden'}
@@ -304,6 +313,29 @@ export function LinksTab() {
                 }
               />
             </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="link-access">Who may open it</label>
+            <select
+              id="link-access"
+              value={editing.draft.accessMode}
+              onChange={(e) =>
+                setEditing({
+                  ...editing,
+                  draft: { ...editing.draft, accessMode: e.target.value as AccessMode },
+                })
+              }
+            >
+              {(['everyone', 'invite'] as AccessMode[]).map((m) => (
+                <option key={m} value={m}>
+                  {ACCESS_LABELS[m]}
+                </option>
+              ))}
+            </select>
+            <p className="tiny muted" style={{ marginTop: 4 }}>
+              {ACCESS_DESCRIPTIONS[editing.draft.accessMode]}
+            </p>
           </div>
 
           <label className="check">

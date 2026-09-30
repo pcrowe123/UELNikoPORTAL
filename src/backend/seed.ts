@@ -16,6 +16,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikoiq.com',
     colour: '#1f7a6c',
     sortOrder: 1,
+    accessMode: 'everyone',
     isActive: true,
   },
   {
@@ -25,6 +26,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikocrm.com',
     colour: '#0f4c81',
     sortOrder: 2,
+    accessMode: 'everyone',
     isActive: true,
   },
   {
@@ -34,6 +36,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikopos.com',
     colour: '#9a5b12',
     sortOrder: 3,
+    accessMode: 'everyone',
     isActive: true,
   },
   {
@@ -43,6 +46,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikostock.com',
     colour: '#6b3fa0',
     sortOrder: 4,
+    accessMode: 'everyone',
     isActive: true,
   },
   {
@@ -52,6 +56,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikosop.com',
     colour: '#a33b2a',
     sortOrder: 5,
+    accessMode: 'everyone',
     isActive: true,
   },
   {
@@ -61,6 +66,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikopod.com',
     colour: '#2e6b3e',
     sortOrder: 6,
+    accessMode: 'everyone',
     isActive: true,
   },
   {
@@ -70,6 +76,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     url: 'https://uelnikobooking.com',
     colour: '#0d7490',
     sortOrder: 7,
+    accessMode: 'everyone',
     isActive: true,
   },
 ];

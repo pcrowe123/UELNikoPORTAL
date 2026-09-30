@@ -22,8 +22,15 @@ interface SettingRow {
   value: unknown;
 }
 
+interface AccessRow {
+  key: string;
+  userId: string;
+  linkId: string;
+}
+
 class PortalDb extends Dexie {
   links!: EntityTable<PortalLink, 'id'>;
+  access!: EntityTable<AccessRow, 'key'>;
   users!: EntityTable<User, 'id'>;
   settings!: EntityTable<SettingRow, 'key'>;
   audit!: EntityTable<AuditEntry, 'id'>;
@@ -35,6 +42,15 @@ class PortalDb extends Dexie {
       users: 'id, email',
       settings: 'key',
       audit: 'id, at',
+    });
+    // Added with the access feature (D18). Dexie needs a new version for a new table; the old
+    // one is left above so a browser holding the version 1 database upgrades rather than failing.
+    this.version(2).stores({
+      links: 'id, slug, sortOrder',
+      users: 'id, email',
+      settings: 'key',
+      audit: 'id, at',
+      access: 'key, userId, linkId',
     });
   }
 }
@@ -142,6 +158,28 @@ export function createLocalBackend(): Backend {
       // The demo has no launch history to preserve, so a delete is always a delete.
       await db.links.delete(id);
       return { deleted: true };
+    },
+
+    async listMyAccess() {
+      await prepare();
+      if (!signedIn) return [];
+      const rows = await db.access.where('userId').equals(signedIn.id).toArray();
+      return rows.map((r) => r.linkId);
+    },
+
+    async listAccessFor(userId) {
+      await prepare();
+      const rows = await db.access.where('userId').equals(userId).toArray();
+      return rows.map((r) => r.linkId);
+    },
+
+    async setAccessFor(userId, linkIds) {
+      await prepare();
+      const existing = await db.access.where('userId').equals(userId).toArray();
+      await db.access.bulkDelete(existing.map((r) => r.key));
+      await db.access.bulkAdd(
+        linkIds.map((linkId) => ({ key: `${userId}:${linkId}`, userId, linkId })),
+      );
     },
 
     async listUsers() {

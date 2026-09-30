@@ -11,6 +11,7 @@
 //    it arrives and replayed to whoever subscribes afterwards.
 
 import { createClient, type SupabaseClient, type User as AuthUser } from '@supabase/supabase-js';
+import type { AccessMode } from '../engine/access';
 import {
   DEFAULT_SETTINGS,
   type AppSettings,
@@ -39,6 +40,7 @@ interface LinkRow {
   colour: string;
   sort_order: number;
   is_active: boolean;
+  access_mode: AccessMode;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +74,8 @@ const linkFromRow = (r: LinkRow): PortalLink => ({
   colour: r.colour,
   sortOrder: r.sort_order,
   isActive: r.is_active,
+  // A row written before 0003 has no access_mode; treat it as open, which is what it was.
+  accessMode: r.access_mode ?? 'everyone',
   createdAt: r.created_at,
   updatedAt: r.updated_at,
 });
@@ -85,6 +89,7 @@ const linkToRow = (l: Partial<NewPortalLink>): Record<string, unknown> => {
   if (l.colour !== undefined) row.colour = l.colour;
   if (l.sortOrder !== undefined) row.sort_order = l.sortOrder;
   if (l.isActive !== undefined) row.is_active = l.isActive;
+  if (l.accessMode !== undefined) row.access_mode = l.accessMode;
   return row;
 };
 
@@ -276,6 +281,59 @@ export function createSupabaseBackend(url: string, anonKey: string, sessionKey: 
       const { error } = await client.from('portal_links').delete().eq('id', id);
       if (error) explain(error);
       return { deleted: true };
+    },
+
+    async listMyAccess() {
+      // RLS narrows this to the caller's own rows, so no filter is needed here - but one is given
+      // anyway, because a query that depends on a policy for its correctness is a query that
+      // silently returns everything the day somebody loosens the policy.
+      const { data: auth } = await client.auth.getUser();
+      if (!auth.user) return [];
+      const { data, error } = await client
+        .from('link_access')
+        .select('link_id')
+        .eq('user_id', auth.user.id);
+      if (error) explain(error);
+      return (data as { link_id: string }[]).map((r) => r.link_id);
+    },
+
+    async listAccessFor(userId) {
+      const { data, error } = await client
+        .from('link_access')
+        .select('link_id')
+        .eq('user_id', userId);
+      if (error) explain(error);
+      return (data as { link_id: string }[]).map((r) => r.link_id);
+    },
+
+    async setAccessFor(userId, linkIds) {
+      const wanted = new Set(linkIds);
+      const current = new Set(await this.listAccessFor(userId));
+
+      const toAdd = [...wanted].filter((id) => !current.has(id));
+      const toRemove = [...current].filter((id) => !wanted.has(id));
+
+      // Only the difference is written, so an admin opening the dialog and pressing Save without
+      // changing anything does not churn every row's granted_at and granted_by.
+      if (toRemove.length) {
+        const { error } = await client
+          .from('link_access')
+          .delete()
+          .eq('user_id', userId)
+          .in('link_id', toRemove);
+        if (error) explain(error);
+      }
+      if (toAdd.length) {
+        const { data: auth } = await client.auth.getUser();
+        const { error } = await client.from('link_access').insert(
+          toAdd.map((linkId) => ({
+            user_id: userId,
+            link_id: linkId,
+            granted_by: auth.user?.id ?? null,
+          })),
+        );
+        if (error) explain(error);
+      }
     },
 
     async listUsers() {

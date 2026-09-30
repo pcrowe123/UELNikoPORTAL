@@ -61,6 +61,20 @@ browser you are using cannot install it. The button hides rather than sitting th
 Installing changes nothing about how you sign in, and it does not store anything about the
 applications on your device. It is a smarter shortcut, nothing more.
 
+### A tile with a padlock on it
+
+Some applications are given out individually. If you have not been given one, its tile still appears
+in its usual place — greyed, with a padlock and the words **No access yet**. Tapping it tells you to
+ask an administrator.
+
+It is shown rather than hidden on purpose: you can see the application exists and ask for it, rather
+than wondering whether there is something you are missing.
+
+Be aware that this is a signpost and not a lock. It tells you what you have been given; it is not
+what stops anybody getting in. Each application has its own login, and that is what actually decides
+who gets in — so if you are not supposed to be in something, the place that stops you is that
+application, not this page.
+
 ### A tile that says it needs fixing
 
 Now and again a tile may appear greyed out, saying it has no usable web address. That means somebody
@@ -92,6 +106,25 @@ To add a new person, Patrick runs one command on the office PC. The tab shows yo
 
 Note that deactivating somebody here only closes the **portal** door. Their accounts on the
 applications themselves are separate, and have to be closed in each application.
+
+### Giving somebody an application
+
+Two steps, and they are on different tabs.
+
+First, on **Applications**, edit the application and set **Who may open it** to *By invitation*. Its
+row then shows a padlock. Everything is *Everyone* until you do this, so nothing changes for anybody
+until you decide it should.
+
+Then, on **People**, press **Applications** beside a person and tick what they may open. Only
+invitation-only applications are listed — an *Everyone* one is open to them regardless, and showing
+it would suggest otherwise. Administrators are not listed at all: they can open everything, because
+they could grant it to themselves in two clicks anyway.
+
+Anything left unticked shows that person a padlock rather than nothing.
+
+Worth repeating, because it matters: this changes what the portal *shows*, not what an application
+*allows*. It is a tidy way to point people at the right things, not a way to keep anybody out of
+something. For that, close their account in the application itself.
 
 **Settings** holds the line of text under the heading on the landing page, whether tiles open in a
 new tab, and whether the search box appears.

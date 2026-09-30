@@ -2,25 +2,30 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LinkCard } from '../components/LinkCard';
+import { canLaunch, lockedReason } from '../engine/access';
 import { searchLinks, visibleLinks, type LinkLike } from '../engine/links';
 import type { PortalLink } from '../backend/types';
 import { useApp } from '../state/AppContext';
 import { useToast } from '../components/Toast';
 
 export function HomeScreen() {
-  const { backend, user, settings } = useApp();
+  const { backend, user, isAdmin, settings } = useApp();
   const toast = useToast();
 
   const [links, setLinks] = useState<PortalLink[] | null>(null);
+  const [granted, setGranted] = useState<ReadonlySet<string>>(new Set());
   const [failure, setFailure] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
     let live = true;
-    void backend
-      .listLinks()
-      .then((rows) => {
-        if (live) setLinks(rows);
+    // Both together: a tile drawn before its grants have arrived would flash a padlock at
+    // somebody who does have access, which looks like the portal changing its mind.
+    void Promise.all([backend.listLinks(), backend.listMyAccess()])
+      .then(([rows, mine]) => {
+        if (!live) return;
+        setLinks(rows);
+        setGranted(new Set(mine));
       })
       .catch((err: Error) => {
         if (live) setFailure(err.message);
@@ -44,6 +49,21 @@ export function HomeScreen() {
     [backend],
   );
 
+  const isLocked = useCallback(
+    (link: PortalLink) =>
+      !canLaunch({ mode: link.accessMode, granted: granted.has(link.id), isAdmin }),
+    [granted, isAdmin],
+  );
+
+  const onBlocked = useCallback(
+    (link: LinkLike) => {
+      const why = lockedReason({ mode: 'invite', granted: false, isAdmin: false });
+      toast.say(`${link.name}: ${why}`);
+    },
+    [toast],
+  );
+
+  const lockedShown = shown.filter(isLocked).length;
   const firstName = user?.displayName.split(/\s+/)[0] ?? '';
 
   return (
@@ -108,7 +128,14 @@ export function HomeScreen() {
 
       <div className="tiles">
         {shown.map((link) => (
-          <LinkCard key={link.id} link={link} newTab={settings.openInNewTab} onLaunch={onLaunch} />
+          <LinkCard
+            key={link.id}
+            link={link}
+            newTab={settings.openInNewTab}
+            locked={isLocked(link)}
+            onLaunch={onLaunch}
+            onBlocked={onBlocked}
+          />
         ))}
       </div>
 
@@ -116,6 +143,14 @@ export function HomeScreen() {
         <p className="tiny muted" style={{ marginTop: 18 }}>
           Each application asks you to sign in with its own account. Signing out of the portal does
           not sign you out of them.
+          {lockedShown > 0 ? (
+            <>
+              {' '}
+              {lockedShown === 1 ? 'One application is' : `${lockedShown} applications are`} padlocked
+              because you have not been given {lockedShown === 1 ? 'it' : 'them'} yet — ask an
+              administrator.
+            </>
+          ) : null}
         </p>
       ) : null}
     </div>

@@ -48,7 +48,14 @@ Read these before changing anything:
    `vbscript:`, `file:` — and the `portal_links_url_https` constraint refuses anything that is not
    TLS. A tile URL is admin-supplied data that ends up in an `href`; these two checks are what
    stands between the two. Never loosen either to make an address work.
-10. **Configuration is data (CI-01).** The tile list, the welcome line, whether tiles open in a new
+10. **The padlock is a signpost, not a lock (D18).** A tile marked `invite` is greyed for anyone
+    who has not been granted it, and that is a *presentation* decision. The address is still
+    readable through the API by any signed-in person, because the landing page has to draw the tile.
+    What IS enforced is that only an administrator may grant or revoke. Never describe the padlock
+    to anybody as though it keeps them out of an application — the thing that keeps people out of an
+    application is that application's own login (D2). If a request ever arrives to "make the portal
+    properly block X", the answer is a change in X, not here.
+11. **Configuration is data (CI-01).** The tile list, the welcome line, whether tiles open in a new
     tab, whether the search box shows — all of it lives in `portal_links` and `app_settings` and is
     edited on the Admin screen. **Adding the eighth application is not a code change.** Do not add
     it to `0001_init.sql`, and do not add it to `src/backend/seed.ts`.
@@ -71,7 +78,7 @@ against the live project and **nobody is ever emailed** (the accounts are made w
 docs/                 SPECIFICATION, DECISIONS, PLAN, USER_GUIDE
 scripts/              setup-supabase.mjs, create-user.mjs, e2e-smoke.mjs, lib/
 supabase/migrations/  0001_init.sql - never edited once shipped
-src/engine/           pure logic: safeHref, normaliseUrl, initials, sort, search, install advice
+src/engine/           pure logic: safeHref, normaliseUrl, initials, sort, search, install, access
 src/backend/          the storage interface; supabase.ts and local.ts implement it; seed.ts
 src/state/            React context (AppContext, useApp)
 src/components/       AppShell, LinkCard, InstallButton, Modal, Toast
