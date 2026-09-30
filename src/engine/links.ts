@@ -56,12 +56,40 @@ export function safeHref(url: string): string | null {
   return parsed.toString();
 }
 
+/**
+ * A tool running on the person's own machine (D19).
+ *
+ * `http://` is allowed for these and for nothing else. Browsers already treat localhost as a
+ * secure context because the request never crosses a network, so there is nothing for TLS to
+ * protect; the same cannot be said of `http://anything.uel.ie`, which is what the https rule is
+ * really there to stop. The `portal_links_url_scheme` constraint says the same thing in SQL.
+ */
+export function isLocalhostUrl(url: string): boolean {
+  const href = safeHref(url);
+  if (!href) return false;
+  try {
+    const { protocol, hostname } = new URL(href);
+    if (protocol !== 'http:' && protocol !== 'https:') return false;
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
 /** What an admin typed, tidied into something `safeHref` will accept if it possibly can. */
 export function normaliseUrl(input: string): string {
   const trimmed = (input ?? '').trim();
   if (!trimmed) return '';
-  // People paste "uelnikobooking.com". Assume TLS rather than refusing them.
-  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  // People paste "uelnikobooking.com". Assume TLS rather than refusing them - except for a local
+  // address, where https would be wrong: a dev server almost never has a certificate, so
+  // "localhost:5173" means http and assuming otherwise gives a tile that cannot connect.
+  const bareIsLocal = /^(localhost|127\.0\.0\.1)(:|\/|$)/i.test(trimmed);
+  // "localhost:5173" satisfies the usual scheme test - `localhost:` parses as one - so a bare
+  // host with a port was being left exactly as typed and then refused. A colon followed only by
+  // digits is a port, never a scheme, and no real scheme is spelt that way.
+  const looksLikeHostAndPort = /^[a-z0-9.-]+:\d+(\/|\?|#|$)/i.test(trimmed);
+  const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !looksLikeHostAndPort;
+  const withScheme = hasScheme ? trimmed : `${bareIsLocal ? 'http' : 'https'}://${trimmed}`;
   try {
     const parsed = new URL(withScheme);
     // A bare host gains a "/" from the URL parser; drop it again so the stored value reads the
@@ -147,8 +175,10 @@ export function describeLinkProblem(link: {
   if (!link.url.trim()) return 'Give the tile a web address.';
   const href = safeHref(link.url);
   if (!href) return 'That is not a web address. It has to start with https:// and have a host.';
-  if (!/^https:\/\//i.test(href)) {
-    return 'Use an https:// address. The database will not accept a tile without TLS.';
+  // http is allowed only for a tool on this machine (D19); everywhere else it would put a real
+  // person's session on the office network in clear text.
+  if (!/^https:\/\//i.test(href) && !isLocalhostUrl(href)) {
+    return 'Use an https:// address. Only localhost may be plain http, and only because it never leaves this machine.';
   }
   if (!/^#[0-9a-f]{6}$/i.test(link.colour.trim())) return 'The colour has to look like #0f4c81.';
   return null;

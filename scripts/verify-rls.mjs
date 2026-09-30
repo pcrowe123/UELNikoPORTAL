@@ -136,13 +136,28 @@ try {
 
   // D3: everyone who can sign in sees every tile. This is also the check that the EXECUTE revoke
   // in 0002 did not break the policies, which all call current_user_active().
-  step('a member sees all seven tiles (D3)');
+  // Not a magic number: the count is asked of the database itself, so adding or hiding a tile
+  // never makes this check fail for a reason that has nothing to do with the rule it is testing.
+  step('a member sees every tile that is switched on (D3)');
+  const shownToAll = await admin('/rest/v1/portal_links?select=slug&is_active=eq.true', {
+    method: 'GET',
+  });
   const tiles = await api('/rest/v1/portal_links?select=slug&is_active=eq.true', {
     token: member.token,
   });
-  tiles.ok && tiles.body.length === 7
+  tiles.ok && tiles.body.length === shownToAll.length && shownToAll.length > 0
     ? pass()
-    : fail(`expected 7 tiles, got ${tiles.status} ${JSON.stringify(tiles.body)}`);
+    : fail(
+        `a member saw ${tiles.body?.length} of the ${shownToAll.length} switched-on tiles: ${JSON.stringify(tiles.body)}`,
+      );
+
+  step('a member does not see a tile that is switched off');
+  const hiddenToMember = await api('/rest/v1/portal_links?select=slug&is_active=eq.false', {
+    token: member.token,
+  });
+  Array.isArray(hiddenToMember.body) && hiddenToMember.body.length === 0
+    ? pass()
+    : fail(`a member saw hidden tiles: ${JSON.stringify(hiddenToMember.body)}`);
 
   step('a member can read the settings the landing page needs');
   const settings = await api('/rest/v1/app_settings?select=key', { token: member.token });
@@ -223,10 +238,41 @@ try {
     headers: { Prefer: 'return=representation' },
   });
   const refusedHttp =
-    !insecure.ok && JSON.stringify(insecure.body).includes('portal_links_url_https');
+    !insecure.ok && JSON.stringify(insecure.body).includes('portal_links_url_scheme');
   refusedHttp
     ? pass()
     : fail(`expected the url_https constraint to refuse it, got ${insecure.status} ${JSON.stringify(insecure.body)}`);
+
+  step('the database accepts a localhost address (D19)');
+  const local = await api('/rest/v1/portal_links?slug=eq.rls-check', {
+    token: boss.token,
+    method: 'PATCH',
+    body: { url: 'http://localhost:5173' },
+    headers: { Prefer: 'return=representation' },
+  });
+  local.ok
+    ? pass()
+    : fail(`a localhost tile should be allowed, got ${local.status} ${JSON.stringify(local.body)}`);
+
+  step('but not a host that merely starts with "localhost"');
+  const lookalike = await api('/rest/v1/portal_links?slug=eq.rls-check', {
+    token: boss.token,
+    method: 'PATCH',
+    body: { url: 'http://localhost.evil.test' },
+    headers: { Prefer: 'return=representation' },
+  });
+  !lookalike.ok && JSON.stringify(lookalike.body).includes('portal_links_url_scheme')
+    ? pass()
+    : fail(`localhost.evil.test should be refused, got ${lookalike.status} ${JSON.stringify(lookalike.body)}`);
+
+  step('and the tile is put back to a real address');
+  const restore = await api('/rest/v1/portal_links?slug=eq.rls-check', {
+    token: boss.token,
+    method: 'PATCH',
+    body: { url: 'https://example.test' },
+    headers: { Prefer: 'return=representation' },
+  });
+  restore.ok ? pass() : fail(`could not restore: ${restore.status}`);
 
   step('the database refuses a javascript: address too');
   const script = await api('/rest/v1/portal_links?slug=eq.rls-check', {
@@ -235,7 +281,7 @@ try {
     body: { url: 'javascript:alert(1)' },
     headers: { Prefer: 'return=representation' },
   });
-  !script.ok && JSON.stringify(script.body).includes('portal_links_url_https')
+  !script.ok && JSON.stringify(script.body).includes('portal_links_url_scheme')
     ? pass()
     : fail(`expected the url_https constraint to refuse it, got ${script.status} ${JSON.stringify(script.body)}`);
 

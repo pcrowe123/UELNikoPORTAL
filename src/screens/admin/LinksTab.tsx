@@ -270,7 +270,9 @@ export function LinksTab() {
               }
             />
             <p className="tiny muted" style={{ marginTop: 4 }}>
-              https:// is added if you leave it off. Only https addresses are accepted.
+              https:// is added if you leave it off. Only https addresses are accepted — except a
+              tool on this machine, where <span className="mono">localhost:5173</span> works and is
+              taken as http.
             </p>
           </div>
 

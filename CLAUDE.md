@@ -43,11 +43,13 @@ Read these before changing anything:
 8. **The engine is pure.** Everything in `src/engine/` is plain TypeScript with no React, no
    network and no clock of its own. That is what makes the link rules testable, and they are the
    only logic this application has.
-9. **A tile address is `https` only, and the check is written twice.** `safeHref` in
-   `src/engine/links.ts` refuses any scheme that is not `http(s)` — `javascript:`, `data:`,
-   `vbscript:`, `file:` — and the `portal_links_url_https` constraint refuses anything that is not
-   TLS. A tile URL is admin-supplied data that ends up in an `href`; these two checks are what
-   stands between the two. Never loosen either to make an address work.
+9. **A tile address is `https` only — plus `localhost` — and the check is written twice.**
+   `safeHref` in `src/engine/links.ts` refuses any scheme that is not `http(s)` — `javascript:`,
+   `data:`, `vbscript:`, `file:` — and the `portal_links_url_scheme` constraint refuses anything
+   that is not TLS **except** `http://localhost` and `http://127.0.0.1`, for tools that run on the
+   person's own machine (D19). A tile URL is admin-supplied data that ends up in an `href`; those
+   two checks are what stands between the two. Never widen the exception beyond the local machine:
+   plain `http` to a real host puts a live session on the office network in clear text.
 10. **The padlock is a signpost, not a lock (D18).** A tile marked `invite` is greyed for anyone
     who has not been granted it, and that is a *presentation* decision. The address is still
     readable through the API by any signed-in person, because the landing page has to draw the tile.

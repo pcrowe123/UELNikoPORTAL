@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   describeLinkProblem,
+  isLocalhostUrl,
   hostOf,
   initials,
   normaliseUrl,
@@ -57,6 +58,28 @@ describe('safeHref', () => {
   });
 });
 
+describe('isLocalhostUrl', () => {
+  it('recognises the local machine, with or without a port', () => {
+    expect(isLocalhostUrl('http://localhost:5173')).toBe(true);
+    expect(isLocalhostUrl('http://localhost')).toBe(true);
+    expect(isLocalhostUrl('http://127.0.0.1:3001/app')).toBe(true);
+    expect(isLocalhostUrl('https://localhost:8443')).toBe(true);
+  });
+
+  it('is not fooled by a hostname that merely starts with localhost', () => {
+    // The whole reason the database constraint spells out the boundary after the host.
+    expect(isLocalhostUrl('http://localhost.evil.test')).toBe(false);
+    expect(isLocalhostUrl('http://localhostage.com')).toBe(false);
+    expect(isLocalhostUrl('http://127.0.0.1.evil.test')).toBe(false);
+  });
+
+  it('is false for real hosts and for rubbish', () => {
+    expect(isLocalhostUrl('https://uelnikoiq.com')).toBe(false);
+    expect(isLocalhostUrl('javascript:alert(1)')).toBe(false);
+    expect(isLocalhostUrl('')).toBe(false);
+  });
+});
+
 describe('normaliseUrl', () => {
   it('assumes https when someone pastes a bare host', () => {
     expect(normaliseUrl('uelnikoiq.com')).toBe('https://uelnikoiq.com');
@@ -78,6 +101,23 @@ describe('normaliseUrl', () => {
     // Left as typed so describeLinkProblem can refuse it with a sentence, rather than being
     // quietly turned into https://javascript:...
     expect(normaliseUrl('javascript:alert(1)')).toBe('javascript:alert(1)');
+  });
+
+  it('assumes http, not https, for a bare local address', () => {
+    // A dev server has no certificate, so https://localhost:5173 is a tile that cannot connect.
+    expect(normaliseUrl('localhost:5173')).toBe('http://localhost:5173');
+    expect(normaliseUrl('127.0.0.1:3001')).toBe('http://127.0.0.1:3001');
+  });
+
+  it('still assumes https for a bare host that only looks local', () => {
+    expect(normaliseUrl('localhostage.com')).toBe('https://localhostage.com');
+  });
+
+  it('does not mistake a port for a scheme', () => {
+    // "localhost:5173" satisfies the usual scheme test, which used to leave it exactly as typed
+    // and then refuse it. Any host:port had the same problem.
+    expect(normaliseUrl('uelnikoiq.com:8080')).toBe('https://uelnikoiq.com:8080');
+    expect(normaliseUrl('uelnikoiq.com:8080/orders')).toBe('https://uelnikoiq.com:8080/orders');
   });
 
   it('gives back nothing for nothing', () => {
@@ -202,8 +242,14 @@ describe('describeLinkProblem', () => {
     expect(describeLinkProblem({ ...ok, url: 'uelnikobooking.com' })).toMatch(/https/i);
   });
 
-  it('refuses plain http, because the database will', () => {
-    expect(describeLinkProblem({ ...ok, url: 'http://uelnikobooking.com' })).toMatch(/TLS/);
+  it('refuses plain http to a real host, because the database will', () => {
+    expect(describeLinkProblem({ ...ok, url: 'http://uelnikobooking.com' })).toMatch(/https/i);
+    expect(describeLinkProblem({ ...ok, url: 'http://localhost.evil.test' })).toMatch(/https/i);
+  });
+
+  it('accepts plain http to this machine (D19)', () => {
+    expect(describeLinkProblem({ ...ok, url: 'http://localhost:5173' })).toBeNull();
+    expect(describeLinkProblem({ ...ok, url: 'http://127.0.0.1:3001' })).toBeNull();
   });
 
   it('checks the colour is a hex triplet', () => {

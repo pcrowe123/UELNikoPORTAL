@@ -184,3 +184,39 @@ That distinction is written into the migration, the engine, the People dialog an
 because a control that looks like security and is not is worse than no control at all. If something
 must genuinely be kept from somebody, it has to be kept from them in that application, not here.
 *Decided with Patrick, 30 September 2026.*
+
+**D19 — `http://localhost` is allowed; plain `http://` to anything else is not.** Two of the UEL
+applications — the Intact SQL generator and Central Purchasing — are not deployed anywhere and run
+only on Patrick's own PC. The https-only rule from `0001` meant neither could have a tile at all.
+
+The exception is as narrow as it can be: `localhost` and `127.0.0.1`, and nothing that merely
+starts with them (`localhost.evil.test` is refused, and there is a test for it). That is not a hole
+in the rule, for two reasons: browsers already classify `http://localhost` as a **secure context**,
+giving it the same treatment as https for service workers and credentials, precisely because the
+request never crosses a network; and a request to localhost cannot be intercepted, redirected or
+read by anybody else, so the threat TLS exists to answer is not present.
+
+What stays refused is plain `http://` to a real host. A tile pointing at `http://something.uel.ie`
+would put a real person's session on the office network in clear text, and that is the case the
+original rule was written for.
+
+The constraint was renamed from `portal_links_url_https` to `portal_links_url_scheme`, because it
+no longer means only https and a constraint whose name lies is one people misread.
+
+Both tiles are invitation-only, so they are padlocked for everybody who has not been given them
+(D18). They are also, unavoidably, **machine-specific**: a localhost tile works on the PC running
+the tool and nowhere else, so it will fail on a phone or another desk. That is a property of the
+tools, not of the portal, and it resolves itself the day either one is deployed properly.
+*Decided with Patrick, 30 September 2026.*
+
+**D20 — A switched-off tile is hidden from members by the database, not only by the screen.**
+`0001` let any active person select every row of `portal_links` and left `listLinks()` to filter
+out the inactive ones — the rule written once, in the place that does not count. `npm run
+verify:rls` found it the moment a check was added, which is the argument for that script in one
+line.
+
+Not a catastrophe: a tile's address is not secret and each application has its own login. But
+"switched off" ought to mean switched off, and an administrator taking an application down for an
+afternoon should not be publishing its address to everyone meanwhile. Administrators still read
+everything, because the Admin screen has to list hidden tiles in order to switch them back on.
+*Found and fixed 30 September 2026, `0005_hidden_tiles.sql`.*
