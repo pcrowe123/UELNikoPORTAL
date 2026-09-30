@@ -68,16 +68,20 @@ password in `.env` as `SMTP_PASS` so the scripts can see it.
 Until this is done, invitation mail goes through Supabase's own sender, which is rate-limited to a
 few messages an hour. Fine for testing with one address; not enough to invite a dozen people.
 
-**2. Say the word on the first administrator.** Nobody can sign in until this is run, and it cannot
-be done from the app, because there is no signup page (D4). It **sends a real email**, so it has
-been left for you — tell me which address and I will run it, or run it yourself:
+**2. The first administrator — once step 1 is done.** Nobody can sign in until this is run, and it
+cannot be done from the app, because there is no signup page (D4).
+
+Decided with Patrick, 30 September 2026: the account is **`pcrowe123@gmail.com`**, and the
+invitation waits until Resend is configured so it arrives from `portal@uel.ie` rather than
+Supabase's rate-limited sender.
 
 ```
-node scripts/create-user.mjs --email patrick@uel.ie --name "Patrick Crowe" --role admin
+node scripts/create-user.mjs --email pcrowe123@gmail.com --name "Patrick Crowe" --role admin
 ```
 
-(Which address? Your Supabase login is `pcrowe123@gmail.com`; the docs assume a `uel.ie` address.
-Whichever you use is the one you will sign in to the portal with.)
+It **sends a real email**. Patrick gets a link and chooses his own password; nobody else ever knows
+it. That address is then his portal login — unrelated to his accounts on any of the seven
+applications (D2).
 
 **3. Confirm the Cloudflare zone, then deploy.** `wrangler.jsonc` claims `uelnikoportal.com` and
 `www.uelnikoportal.com` with `custom_domain: true`, which makes Cloudflare create the DNS records
