@@ -51,7 +51,10 @@ immediately even holding a valid token (SE-02).
 ## What is waiting on Patrick
 
 **1. Set up sender mail.** Invitations and password resets go through Supabase Auth's SMTP settings.
-On the dashboard → Project Settings → Authentication → SMTP Settings, point them at Resend:
+Go to https://supabase.com/dashboard/project/zeujzuxkjozlelayerkz/auth/smtp — **Authentication** is
+a top-level section in the narrow icon rail down the far-left edge of the dashboard (the padlock,
+above Storage). It is *not* under Project Settings, whatever older notes say. Turn on **Enable
+Custom SMTP**, then point it at Resend:
 
 | | |
 |---|---|
@@ -68,7 +71,8 @@ password in `.env` as `SMTP_PASS` so the scripts can see it.
 Until this is done, invitation mail goes through Supabase's own sender, which is rate-limited to a
 few messages an hour. Fine for testing with one address; not enough to invite a dozen people.
 
-**2. Tell Supabase Auth where the portal lives.** Dashboard → Authentication → URL Configuration:
+**2. Tell Supabase Auth where the portal lives.**
+https://supabase.com/dashboard/project/zeujzuxkjozlelayerkz/auth/url-configuration
 
 | | |
 |---|---|

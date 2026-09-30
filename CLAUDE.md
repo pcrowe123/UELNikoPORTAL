@@ -148,6 +148,11 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   for `authenticated` and lose it for `anon`; the linter still warns about the former and that
   warning is expected. Note `revoke ... from public` also strips what a role inherits through
   PUBLIC, so the grant has to be given back to `authenticated` explicitly.
+- **Authentication is not under Project Settings in the Supabase dashboard.** It is a top-level
+  section in the far-left icon rail, and the settings worth knowing are at
+  `/project/<ref>/auth/smtp` and `/project/<ref>/auth/url-configuration`. Plenty of older notes and
+  guides say Project Settings → Authentication; that layout is gone. Link the paths, not the
+  clicks.
 - **Supabase silently ignores a `redirect_to` it has not been told to allow.** `create-user.mjs`
   sends people to `<APP_URL>/reset-password`; unless that address is in Authentication → URL
   Configuration → Redirect URLs, Supabase falls back to the Site URL — `http://localhost:3000` on a
