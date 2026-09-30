@@ -1,0 +1,41 @@
+{
+  "name": "uelnikoportal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "UEL Niko Portal - one signed-in landing page that launches every UEL / NIKO application",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.scripts.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "node scripts/e2e-smoke.mjs",
+    "setup:supabase": "node scripts/setup-supabase.mjs",
+    "create-user": "node scripts/create-user.mjs",
+    "deploy": "npm run build && wrangler deploy",
+    "verify:rls": "node scripts/verify-rls.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
+    "dexie": "^4.4.5",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "fake-indexeddb": "^6.2.5",
+    "typescript": "~5.9.2",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0",
+    "wrangler": "^4.131.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

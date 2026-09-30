@@ -1,0 +1,23 @@
+node_modules/
+dist/
+dist-e2e/
+.wrangler/
+.env
+.env.local
+.env.*.local
+.dev.vars
+supabase/.temp/
+*.log
+.DS_Store
+.claude/settings.local.json
+
+# Any copied or renamed secrets file (e.g. UEL_.env) must never be committed.
+*.env
+*.dev.vars
+
+# Loose exports saved in the project root are never committed.
+/*.csv
+
+# A copy of the auth config with the project ref filled in, made by setup-supabase.mjs --auth-only.
+.supabase-push/
+supabase/config.push.toml

@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Assets-only Worker (the same shape as the UEL sibling apps): the built Vite app in dist/ is
+  // served by Cloudflare, and unknown paths fall back to index.html for the SPA router.
+  // There is no server code here at all - the database is Supabase, and a launcher has no server
+  // logic of its own to run.
+  "name": "uelnikoportal",
+  "compatibility_date": "2026-09-30",
+  "workers_dev": true,
+  "assets": {
+    "directory": "dist",
+    "not_found_handling": "single-page-application"
+  },
+  // Custom domains. custom_domain: true makes Cloudflare create the DNS records and the
+  // certificate on deploy, but only if the zone is already in this account.
+  //
+  // UNVERIFIED: the brief records the domain as "UelNikoportal.com, registered with Cloudflare"
+  // with the provider to be confirmed. Patrick confirms the zone is in this Cloudflare account
+  // before the first deploy - see docs/PLAN.md. If it is registered elsewhere, the nameservers
+  // move to Cloudflare first, or these two routes come out and the workers.dev address is used.
+  "routes": [
+    { "pattern": "uelnikoportal.com", "custom_domain": true },
+    { "pattern": "www.uelnikoportal.com", "custom_domain": true }
+  ]
+}

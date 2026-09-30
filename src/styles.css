@@ -1,0 +1,503 @@
+/* The design system, the same family as the sibling UEL applications - identical tokens and the
+   same button, pill, banner and table vocabulary - with the calendar machinery left out and one
+   thing of its own: the tile grid, which is the entire point of this application. */
+
+:root {
+  --blue: #0f4c81;
+  --blue-dark: #0b3a63;
+  --ink: #1d2733;
+  --muted: #6b7684;
+  --line: #d9dee5;
+  --line-soft: #eceff3;
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --ok: #1a7f37;
+  --warn: #b7791f;
+  --bad: #b42318;
+  --focus: #f59e0b;
+  --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: Consolas, "Courier New", monospace;
+  --radius: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 4px 12px rgba(16, 24, 40, 0.06);
+  --topbar-h: 52px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+h1, h2, h3 { margin: 0 0 8px; line-height: 1.25; font-weight: 600; }
+h1 { font-size: 22px; }
+h2 { font-size: 18px; }
+h3 { font-size: 15px; }
+p { margin: 0 0 10px; }
+
+a, .link {
+  color: var(--blue);
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+a:hover, .link:hover { text-decoration: underline; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* For a label that a screen reader needs and the page does not have room for. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------- words */
+
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.tiny { font-size: 12px; }
+.mono { font-family: var(--mono); }
+.big { font-size: 18px; }
+.error, .bad { color: var(--bad); }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.nowrap { white-space: nowrap; }
+.right { text-align: right; }
+.spacer { flex: 1; }
+
+/* ---------------------------------------------------------------- shell */
+
+.shell { display: flex; flex-direction: column; min-height: 100%; }
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--topbar-h);
+  padding: 0 16px;
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.2);
+}
+
+.brand { font-size: 16px; font-weight: 600; white-space: nowrap; }
+.brand span { color: var(--focus); }
+.brand.big { font-size: 26px; }
+
+.topbar nav { display: flex; gap: 4px; }
+.topbar nav a {
+  color: rgba(255, 255, 255, 0.85);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.topbar nav a:hover { background: rgba(255, 255, 255, 0.12); text-decoration: none; }
+.topbar nav a.active { background: rgba(255, 255, 255, 0.2); color: #fff; font-weight: 600; }
+
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.whoami { text-align: right; line-height: 1.2; }
+.whoami b { display: block; font-weight: 600; }
+.whoami span { color: rgba(255, 255, 255, 0.75); font-size: 12px; }
+
+.demo-pill {
+  background: var(--focus);
+  color: #3b2200;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.content { flex: 1; padding: 16px; max-width: 1200px; width: 100%; margin: 0 auto; }
+
+.footer {
+  padding: 14px 16px 22px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------------------------------------------------------------- blocks */
+
+.screen-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.banner {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--card);
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.banner-error { border-color: #f3c0bb; background: #fdf3f2; color: #7a1a12; }
+.banner-warn { border-color: #f0dcae; background: #fdf8ec; color: #6b4a0d; }
+.banner-ok { border-color: #bfe3c8; background: #f1faf3; color: #12532a; }
+
+.empty { padding: 32px 16px; text-align: center; color: var(--muted); }
+
+/* ---------------------------------------------------------------- the tiles */
+
+/* auto-fill with a 260px floor, so the grid decides its own column count: three or four on a
+   desktop, two on a tablet, one on a phone, without a breakpoint for each. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  text-decoration: none;
+  /* A tile is a big tap target on a phone and a big click target on a desk. */
+  min-height: 92px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.tile:hover {
+  text-decoration: none;
+  border-color: #bcc6d3;
+  box-shadow: 0 2px 4px rgba(16, 24, 40, 0.08), 0 10px 22px rgba(16, 24, 40, 0.1);
+  transform: translateY(-1px);
+}
+.tile:active { transform: none; }
+
+.tile-badge {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+/* min-width: 0 is what lets a long tagline ellipsise instead of widening the grid column. */
+.tile-words { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.tile-words b { font-weight: 600; font-size: 15px; }
+.tile-tagline { font-size: 13px; color: var(--muted); }
+.tile-host { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+.tile-go { flex: none; color: var(--muted); font-size: 18px; }
+.tile:hover .tile-go { color: var(--blue); }
+
+/* A tile whose address the engine refused. Shown, not hidden, so it gets fixed (D5). */
+.tile-broken { cursor: default; background: #fdf8ec; border-color: #f0dcae; }
+.tile-broken:hover { transform: none; box-shadow: var(--shadow); border-color: #f0dcae; }
+
+/* ---------------------------------------------------------------- controls */
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 38px;
+}
+.btn:hover:not(:disabled) { background: #f7f9fc; border-color: #c3cad4; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+.btn-primary:hover:not(:disabled) { background: var(--blue-dark); border-color: var(--blue-dark); }
+.btn-danger { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #8f1710; border-color: #8f1710; }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-ghost:hover:not(:disabled) { background: rgba(15, 76, 129, 0.08); border-color: transparent; }
+.btn-small { padding: 4px 10px; font-size: 13px; min-height: 30px; }
+
+label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #3d4a5c; }
+
+input[type="text"], input[type="email"], input[type="password"], input[type="number"],
+input[type="color"], select, textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  min-height: 38px;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--blue);
+  outline: 2px solid rgba(15, 76, 129, 0.15);
+  outline-offset: 0;
+}
+input:disabled, select:disabled { background: #f4f6f9; color: var(--muted); }
+textarea { min-height: 70px; resize: vertical; }
+input[type="color"] { padding: 2px; height: 38px; cursor: pointer; }
+
+.field { margin-bottom: 12px; }
+.field-row { display: flex; gap: 10px; }
+.field-row > * { flex: 1; }
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+  font-size: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.check input { width: 18px; height: 18px; min-height: 0; margin: 0; flex: none; accent-color: var(--blue); }
+
+/* ---------------------------------------------------------------- pills and tables */
+
+.pill {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--line-soft);
+  color: #3d4a5c;
+  white-space: nowrap;
+}
+.pill-ok { background: #e3f4e8; color: #12532a; }
+.pill-warn { background: #fdf0d7; color: #6b4a0d; }
+.pill-error { background: #fbe4e2; color: #7a1a12; }
+.pill-info { background: #e2edf7; color: #0b3a63; }
+
+table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.table th, table.table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  vertical-align: top;
+}
+/* `top: 0`, not the height of the top bar: .table-wrap has overflow-x, which makes it the scroll
+   container for anything sticky inside it, so an offset here would push the heading DOWN onto the
+   first row rather than clearing the bar. */
+table.table th {
+  font-weight: 600;
+  color: #3d4a5c;
+  background: #fafbfd;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+table.table td.num, table.table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.table tr:hover td { background: #fafbfd; }
+.table-wrap { overflow-x: auto; }
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+/* ---------------------------------------------------------------- modal */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+.modal {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(16, 24, 40, 0.28);
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+}
+.modal-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-head h2 { margin: 0; }
+.modal-body { padding: 18px; overflow-y: auto; }
+.modal-foot { padding: 14px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+
+/* ---------------------------------------------------------------- toast */
+
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+}
+.toast {
+  background: var(--ink);
+  color: #fff;
+  padding: 11px 15px;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.3);
+  font-size: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.toast.bad { background: var(--bad); }
+.toast.good { background: var(--ok); }
+.toast button {
+  background: none;
+  border: 0;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+  padding: 0;
+}
+
+/* ---------------------------------------------------------------- login */
+
+.login {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: linear-gradient(160deg, var(--blue) 0%, var(--blue-dark) 100%);
+}
+.login-card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.26);
+  padding: 28px;
+  width: 100%;
+  max-width: 400px;
+}
+.login-card .brand { color: var(--ink); margin-bottom: 4px; }
+.login-card .brand span { color: var(--blue); }
+
+/* ---------------------------------------------------------------- tabs */
+
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 16px; overflow-x: auto; }
+.tabs button {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+.tabs button.on { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+
+/* ---------------------------------------------------------------- phone */
+
+@media (max-width: 700px) {
+  .content { padding: 16px 16px 12px; }
+
+  /* The brand, the nav and the user block do not fit across a phone on one row, so the bar
+     becomes two: who you are on top, where you are going underneath. --topbar-h follows it,
+     because sticky table headings sit below the bar. */
+  :root { --topbar-h: 86px; }
+  .topbar {
+    height: auto;
+    min-height: var(--topbar-h);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .topbar nav { order: 3; width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .topbar nav::-webkit-scrollbar { display: none; }
+  .topbar nav a { padding: 6px 10px; font-size: 13px; }
+  .topbar-right { gap: 8px; min-width: 0; }
+  .whoami { min-width: 0; overflow: hidden; }
+  .whoami b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .whoami span { display: none; }
+
+  /* One tile per row on a phone: a 390px screen minus the gutters leaves 358px, and two columns
+     of 172px cannot hold a name and a tagline without clipping them. */
+  .tiles { grid-template-columns: 1fr; gap: 10px; }
+  .tile { padding: 14px; min-height: 80px; }
+
+  .screen-head { align-items: stretch; }
+  .screen-head .spacer { display: none; }
+  .screen-head .field { width: 100%; }
+
+  .field-row { flex-wrap: wrap; }
+  .field-row > * { min-width: 0; }
+
+  .modal-backdrop { padding: 0; }
+  .modal { max-width: 100%; max-height: 100vh; height: 100%; border-radius: 0; }
+  .modal-foot { position: sticky; bottom: 0; background: var(--card); }
+  .toasts { left: 12px; right: 12px; bottom: 12px; max-width: none; }
+}
+
+@media (max-width: 420px) {
+  .topbar nav a { padding: 6px 7px; }
+  .brand { font-size: 15px; }
+}
