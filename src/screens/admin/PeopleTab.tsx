@@ -8,14 +8,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { visibleLinks } from '../../engine/links';
+import { STATUS_LABELS, visibleLinks } from '../../engine/links';
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, type PortalLink, type Role, type User } from '../../backend/types';
 import { useApp } from '../../state/AppContext';
 
 const ROLES: Role[] = ['admin', 'member'];
 
 export function PeopleTab() {
-  const { backend, user: me } = useApp();
+  const { backend, user: me, isCloud } = useApp();
   const toast = useToast();
 
   const [people, setPeople] = useState<User[] | null>(null);
@@ -23,6 +23,14 @@ export function PeopleTab() {
 
   /** The person whose access is being edited, with the tiles currently ticked. */
   const [editing, setEditing] = useState<{ person: User; chosen: Set<string> } | null>(null);
+  /** The new-person form, open when it is not null. */
+  const [inviting, setInviting] = useState<{
+    email: string;
+    displayName: string;
+    role: Role;
+    chosen: Set<string>;
+  } | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const reload = useCallback(async () => {
@@ -44,6 +52,42 @@ export function PeopleTab() {
       await backend.updateUser(person.id, patch);
       await reload();
       toast.good(`${person.displayName} updated.`);
+    } catch (err) {
+      toast.bad((err as Error).message);
+    }
+  }
+
+  async function invite() {
+    if (!inviting) return;
+    const email = inviting.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setProblem('That is not an email address.');
+      return;
+    }
+    setBusy(true);
+    setProblem(null);
+    try {
+      const { warning } = await backend.inviteUser({
+        email,
+        displayName: inviting.displayName,
+        role: inviting.role,
+        linkIds: [...inviting.chosen],
+      });
+      setInviting(null);
+      await reload();
+      if (warning) toast.bad(warning);
+      else toast.good(`${email} has been invited. They will get an email with a link.`);
+    } catch (err) {
+      setProblem((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resend(person: User) {
+    try {
+      await backend.resendInvite(person.id);
+      toast.good(`A fresh link is on its way to ${person.email}.`);
     } catch (err) {
       toast.bad((err as Error).message);
     }
@@ -74,21 +118,34 @@ export function PeopleTab() {
 
   // Only invitation-only tiles are worth ticking: an "Everyone" tile is open to this person
   // whatever the box says, and showing it would suggest otherwise.
-  const invitationTiles = visibleLinks(links, { includeHidden: true }).filter(
+  const invitationTiles = visibleLinks(links, { includeRetired: true }).filter(
     (l) => l.accessMode === 'invite',
   );
 
   return (
     <div>
-      <div className="banner">
-        To add somebody, run this on the office PC:
-        <br />
-        <code className="mono small">
-          node scripts/create-user.mjs --email them@uel.ie --name "Their Name" --role member
-        </code>
-        <br />
-        They are emailed a link and choose their own password. Nobody here ever knows it.
+      <div className="toolbar" style={{ marginBottom: 12 }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => {
+            setProblem(null);
+            setInviting({ email: '', displayName: '', role: 'member', chosen: new Set() });
+          }}
+        >
+          Invite somebody
+        </button>
+        <span className="spacer" />
+        <span className="muted small">
+          {people?.length ?? 0} {people?.length === 1 ? 'person' : 'people'}
+        </span>
       </div>
+
+      {!isCloud ? (
+        <div className="banner banner-warn">
+          <b>Demo mode.</b> Inviting somebody here adds them to this browser only. No email is sent.
+        </div>
+      ) : null}
 
       {people === null ? <p className="muted">Loading…</p> : null}
 
@@ -163,6 +220,14 @@ export function PeopleTab() {
                           onClick={() => void change(person, { isActive: !person.isActive })}
                         >
                           {person.isActive ? 'Deactivate' : 'Reactivate'}
+                        </button>{' '}
+                        <button
+                          type="button"
+                          className="btn btn-small"
+                          title="Send them a fresh link to set their password"
+                          onClick={() => void resend(person)}
+                        >
+                          Resend link
                         </button>
                       </td>
                     </tr>
@@ -178,6 +243,95 @@ export function PeopleTab() {
         Deactivating somebody stops them signing in to the portal. It does not touch their accounts
         on the applications themselves — those are cancelled in each application separately.
       </p>
+
+      {inviting ? (
+        <Modal
+          title="Invite somebody"
+          onClose={() => setInviting(null)}
+          footer={
+            <>
+              <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void invite()}>
+                {busy ? 'Sending…' : 'Send the invitation'}
+              </button>
+              <button type="button" className="btn" onClick={() => setInviting(null)}>
+                Cancel
+              </button>
+            </>
+          }
+        >
+          {problem ? <div className="banner banner-error">{problem}</div> : null}
+
+          <div className="field">
+            <label htmlFor="invite-email">Email</label>
+            <input
+              id="invite-email"
+              type="email"
+              autoComplete="off"
+              value={inviting.email}
+              onChange={(e) => setInviting({ ...inviting, email: e.target.value })}
+              autoFocus
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="invite-name">Their name</label>
+            <input
+              id="invite-name"
+              type="text"
+              value={inviting.displayName}
+              onChange={(e) => setInviting({ ...inviting, displayName: e.target.value })}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="invite-role">Role</label>
+            <select
+              id="invite-role"
+              value={inviting.role}
+              onChange={(e) => setInviting({ ...inviting, role: e.target.value as Role })}
+            >
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {ROLE_LABELS[r]}
+                </option>
+              ))}
+            </select>
+            <p className="tiny muted" style={{ marginTop: 4 }}>
+              {ROLE_DESCRIPTIONS[inviting.role]}
+            </p>
+          </div>
+
+          {inviting.role === 'member' && invitationTiles.length > 0 ? (
+            <div className="field">
+              <label>Applications to give them now</label>
+              {invitationTiles.map((link) => (
+                <label className="check" key={link.id}>
+                  <input
+                    type="checkbox"
+                    checked={inviting.chosen.has(link.id)}
+                    onChange={(e) => {
+                      const chosen = new Set(inviting.chosen);
+                      if (e.target.checked) chosen.add(link.id);
+                      else chosen.delete(link.id);
+                      setInviting({ ...inviting, chosen });
+                    }}
+                  />
+                  <span className="swatch" style={{ background: link.colour }} />
+                  {link.name}
+                </label>
+              ))}
+              <p className="tiny muted" style={{ marginTop: 4, marginBottom: 0 }}>
+                Only invitation-only applications are listed. Everything else is open to them
+                already. You can change this afterwards with the <b>Applications</b> button.
+              </p>
+            </div>
+          ) : null}
+
+          <p className="tiny muted" style={{ marginBottom: 0 }}>
+            They get an email with a link and choose their own password. Nobody here ever knows it.
+          </p>
+        </Modal>
+      ) : null}
 
       {editing ? (
         <Modal
@@ -220,7 +374,11 @@ export function PeopleTab() {
                   />
                   <span className="swatch" style={{ background: link.colour }} />
                   {link.name}
-                  {!link.isActive ? <span className="pill" style={{ marginLeft: 6 }}>Hidden</span> : null}
+                  {link.status !== 'live' ? (
+                    <span className="pill" style={{ marginLeft: 6 }}>
+                      {STATUS_LABELS[link.status]}
+                    </span>
+                  ) : null}
                 </label>
               ))}
             </>

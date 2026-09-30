@@ -85,6 +85,7 @@ src/backend/          the storage interface; supabase.ts and local.ts implement 
 src/state/            React context (AppContext, useApp)
 src/components/       AppShell, LinkCard, InstallButton, Modal, Toast
 src/screens/          Home (the landing page), Login, ResetPassword, Admin + admin/*Tab
+supabase/functions/   user-management (invites), _shared/
 ```
 
 The layering runs one way only: `engine` ← `backend` ← `state` ← `screens`/`components`.
@@ -116,6 +117,12 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   - `npm run verify:rls` proves the database still refuses what it should — see below.
   The project uses the **legacy** `anon` / `service_role` JWT keys rather than the newer
   `sb_publishable_` / `sb_secret_` pair, to match every sibling application (D15).
+- **Edge Function `user-management`** holds the service-role key and is the only way an account is
+  created from the browser (D22). Deploy with
+  `node scripts/setup-supabase.mjs --functions-only`. It needs the `APP_URL` secret, set with
+  `npx supabase secrets set APP_URL=… --project-ref <ref>`; it is on the workers.dev address while
+  the office blocks the custom domain. **Its own admin check is the whole protection** — the
+  service-role key bypasses RLS, so nothing downstream will catch a caller who should not be there.
 - **Email**: invitations and password resets go through Supabase Auth's SMTP settings, pointed at
   Resend, sender `noreply@uel.ie`. **That address has to stay in step with `APP.authEmailFrom` in
   `src/config.ts`**, which is what the login page tells people to look for after asking for a
@@ -160,6 +167,10 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   for `authenticated` and lose it for `anon`; the linter still warns about the former and that
   warning is expected. Note `revoke ... from public` also strips what a role inherits through
   PUBLIC, so the grant has to be given back to `authenticated` explicitly.
+- **supabase-js hides an Edge Function's error message.** Any non-2xx becomes
+  "Edge Function returned a non-2xx status code", with the real body on `error.context` as a
+  `Response`. `readFunctionError` in `src/backend/supabase.ts` digs it out; without it every
+  careful sentence the function writes is thrown away before anybody reads it.
 - **`--window-size` cannot make a Chrome window narrower than about 500px on Windows.** The smoke
   test asked for 390 and laid out at 496 for weeks' worth of runs, so "nothing overflows a 390px
   screen" was passing without ever seeing a phone. Force the viewport with
@@ -175,6 +186,9 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   `/project/<ref>/auth/smtp` and `/project/<ref>/auth/url-configuration`. Plenty of older notes and
   guides say Project Settings → Authentication; that layout is gone. Link the paths, not the
   clicks.
+- **`generateLink` builds a link without sending it; `resetPasswordForEmail` sends one.** Easy to
+  reach for the wrong one in a "resend the invitation" button and ship something that looks like it
+  works while nobody ever gets an email.
 - **`admin/generate_link` is the way to test an invitation without sending one.** It builds the
   link and returns it rather than emailing it, and the `redirect_to` in that link shows whether
   Supabase honoured the address or silently substituted the Site URL — so the allow-list can be

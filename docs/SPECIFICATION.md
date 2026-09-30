@@ -29,6 +29,7 @@ portal does not sign anyone in to anything, and signing out of it does not sign 
 | PL-07 | A tile whose address is unusable is shown as broken rather than hidden, so somebody fixes it (D5). |
 | PL-08 | The page says plainly that each application asks for its own sign-in. |
 | PL-09 | The portal can be installed: an **Install** button puts it on a phone's home screen or a desktop's task bar, where it opens without browser chrome. The button appears only when it can do something — never once installed, and never in a browser that cannot. On iOS, where no browser may install a site itself, it explains the Share → Add to Home Screen route instead. |
+| PL-11 | An application that is not ready yet is shown **greyed and inert in its usual place** with "Not available yet", rather than being left off the page. It is not a link (D21). |
 | PL-10 | An application a person has not been given is shown **padlocked and greyed in its usual place**, never hidden, with a line saying who to ask. It is not rendered as a link. |
 
 ## 3. Signing in (AU)
@@ -53,6 +54,9 @@ portal does not sign anyone in to anything, and signing out of it does not sign 
 | AD-06 | An administrator sees the last 200 launches: who, what and when. |
 | AD-07 | Members cannot reach the Admin screen, and cannot change anything if they get to it anyway (SE-05). |
 | AD-08 | An administrator sets each tile to **Everyone** or **By invitation**. New and existing tiles default to Everyone (D18). |
+| AD-10 | An administrator invites a new person from the People tab — email, name, role, and optionally the invitation-only applications to give them at the same time. They receive a link and choose their own password; nobody here ever knows it (D22). |
+| AD-11 | An administrator can send somebody a fresh link if they lost theirs. |
+| AD-12 | Each tile is **Live**, **Coming soon** or **Retired**, settable from the table or the edit dialog (D21). |
 | AD-09 | An administrator opens a person on the People tab and ticks which invitation-only applications they may open. Administrators are never padlocked and so are not listed for granting. |
 
 ## 5. Security (SE)
@@ -71,7 +75,8 @@ is asked to protect, not how carefully it is built.
 | SE-04 | Outbound tile links carry `rel="noopener noreferrer"`, so the opened site cannot navigate the portal tab through `window.opener` and is not handed the portal's address. |
 | SE-05 | Every rule about who may do what is written twice: once in the screens so the app is pleasant, and once as a Row Level Security policy so the app is safe. RLS is the enforcement. |
 | SE-06 | Only an `https://` address can be stored as a tile — with one narrow exception, `http://localhost` and `http://127.0.0.1`, for tools that run on the person's own machine and never cross a network (D19). Only `http(s)` can become an `href`. Enforced in the engine and again as the `portal_links_url_scheme` constraint (CLAUDE.md rule 9). |
-| SE-10 | A tile that is switched off is invisible to members in the database, not merely filtered out by the screen. Administrators still see it, to switch it back on (D20). |
+| SE-10 | A **retired** tile is invisible to members in the database, not merely filtered out by the screen. Administrators still see it, to bring it back (D20, D21). |
+| SE-11 | The `user-management` Edge Function holds the service-role key, which bypasses RLS entirely, so its own check is the whole protection: it verifies the caller's token and reads their role from `profiles`, never from the request, and refuses anyone who is not an active administrator (D22). |
 | SE-07 | No secret is ever put behind a `VITE_` name: everything with that prefix is published in the browser bundle. |
 | SE-08 | Nobody promotes themselves. A trigger on `profiles` refuses a role or activation change from anyone who is not already an administrator. |
 | SE-09 | Only an administrator may grant or revoke an application. A member cannot add themselves to `link_access`, which is what would make the Admin screen a lie. This is enforced by RLS; the padlock on the landing page is **not** enforcement and is documented as such (D18). |

@@ -48,6 +48,27 @@ export function LinkCard({
     );
   }
 
+  // An application that is not ready yet. Shown to everybody, greyed and inert, so people can see
+  // what is on the way rather than being surprised by it (D21). Checked before the padlock: if it
+  // is not there to be opened, whether you have been granted it is beside the point.
+  if (link.status === 'coming_soon') {
+    return (
+      <div className="tile tile-soon" aria-label={`${link.name} — not available yet`}>
+        <span className="tile-badge" style={{ background: link.colour }} aria-hidden="true">
+          {badge}
+        </span>
+        <div className="tile-words">
+          <b>{link.name}</b>
+          <span className="tile-tagline">{link.tagline}</span>
+          <span className="tile-host">Not available yet</span>
+        </div>
+        <span className="tile-go" aria-hidden="true">
+          &hellip;
+        </span>
+      </div>
+    );
+  }
+
   if (locked) {
     return (
       <button

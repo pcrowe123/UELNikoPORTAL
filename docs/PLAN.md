@@ -14,11 +14,11 @@ deploy.
 
 | | |
 |---|---|
-| Unit tests | **29 pass** — `npm test`, all of `src/engine/links.ts` |
+| Unit tests | **65 pass** — `npm test`, the whole of `src/engine/` |
 | Types | **clean** — `npm run typecheck` |
 | Production build | **clean** — `npm run build` |
-| Browser smoke test | **20 steps pass** — `npm run e2e`, at a genuine 390px viewport |
-| Database rules | **17 checks pass** — `npm run verify:rls`, against the live project |
+| Browser smoke test | **29 steps pass** — `npm run e2e`, at a genuine 390px viewport |
+| Database rules | **29 checks pass** — `npm run verify:rls`, against the live project |
 | Supabase security linter | **no errors**; two expected warnings (D16) |
 
 `npm run e2e` drives the screens in a real headless browser: the seven tiles appear, every one of
@@ -50,6 +50,13 @@ immediately even holding a valid token (SE-02).
   (`smtp.resend.com:465`, user `resend`), sending as **`noreply@uel.ie`** with the display name
   "UEL and Niko Bathrooms". Configured by Patrick, 30 September 2026. `src/config.ts` names the same
   address on the login page; keep the two in step.
+- **Per-application access (D18)** — tiles can be set to *By invitation* and are padlocked, not
+  hidden, for anyone not granted them. Granting is per person on the People tab.
+- **Three tile states (D21)** — Live, Coming soon (greyed and inert on the page) and Retired.
+- **Inviting from the browser (D22)** — the `user-management` Edge Function, deployed, with its
+  `APP_URL` secret pointed at the workers.dev address while the office blocks the custom domain.
+- **Nine tiles** — the seven originals plus UEL Niko SQL and UEL Niko Central Purchasing, both
+  invitation-only and pointing at `http://localhost:5173` (D19).
 - **Installable (PL-09, D17)** — manifest, icons and a service worker, with an Install button in
   the top bar and Share-menu instructions on iOS. Added 30 September 2026.
 - **Deployed** — Worker `uelnikoportal`, 30 September 2026. Both custom domains attached; Cloudflare

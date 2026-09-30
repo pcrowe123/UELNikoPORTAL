@@ -2,6 +2,7 @@
 //
 //   node scripts/setup-supabase.mjs --link           link this folder to the project in .env
 //   node scripts/setup-supabase.mjs --migrate-only   apply any outstanding migrations
+//   node scripts/setup-supabase.mjs --functions-only deploy the Edge Functions
 //   node scripts/setup-supabase.mjs --status         say what is set up and what is not
 //
 // Creating the project itself is deliberately NOT automated: it costs money and it is a decision.
@@ -19,7 +20,7 @@ import { cli } from './lib/supabase-cli.mjs';
 import { ROOT, flag, loadEnv, redact, require_ } from './lib/env.mjs';
 
 const env = loadEnv();
-const anyFlag = ['link', 'migrate-only', 'status'].some(flag);
+const anyFlag = ['link', 'migrate-only', 'functions-only', 'status'].some(flag);
 
 if (!anyFlag) {
   // The usage message is this file's own opening comment, so the two cannot disagree.
@@ -60,9 +61,34 @@ if (flag('status')) {
   console.log(`  Browser anon key          ${redact(env.VITE_SUPABASE_ANON_KEY)}`);
   console.log(`  Resend SMTP password      ${env.SMTP_PASS ? 'set' : '(not set — invitations will not send)'}`);
   console.log(`  App URL                   ${env.APP_URL || 'https://uelnikoportal.com'}`);
-  console.log(`\n  Migrations in this repo   ${migrations.length ? migrations.join(', ') : 'none'}\n`);
+  const functions = existsSync(join(ROOT, 'supabase', 'functions'))
+    ? readdirSync(join(ROOT, 'supabase', 'functions'), { withFileTypes: true })
+        .filter((d) => d.isDirectory() && !d.name.startsWith('_'))
+        .map((d) => d.name)
+    : [];
+  console.log(`\n  Migrations in this repo   ${migrations.length ? migrations.join(', ') : 'none'}`);
+  console.log(`  Edge Functions            ${functions.length ? functions.join(', ') : 'none'}\n`);
   console.log('  Next: docs/PLAN.md.\n');
   process.exit(0);
+}
+
+if (flag('functions-only')) {
+  requireRef();
+  const dir = join(ROOT, 'supabase', 'functions');
+  const functions = readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.startsWith('_'))
+    .map((d) => d.name);
+
+  let failed = 0;
+  for (const fn of functions) {
+    console.log(`\nDeploying ${fn}…`);
+    // The JWT check stays on: the function reads the caller's token to decide whether they are an
+    // administrator, and an unauthenticated caller has no business reaching it at all.
+    const out = cli(['functions', 'deploy', fn, '--project-ref', ref, '--use-api']);
+    if (out.status !== 0) failed++;
+  }
+  console.log(failed ? `\n${failed} function(s) failed.\n` : '\nAll functions deployed.\n');
+  process.exit(failed ? 1 : 0);
 }
 
 if (flag('link')) {

@@ -599,6 +599,93 @@ async function main() {
       ? pass()
       : fail(`an administrator was locked out of a tile they can grant themselves: ${JSON.stringify(adminSees)}`);
 
+    // "Coming soon" is the state Patrick asked for: visible but greyed, rather than gone (D21).
+    // Done while still an administrator, because setting it needs the Admin screen.
+    step('a tile can be set to "Coming soon"');
+    await evaluate(`
+      [...document.querySelectorAll('.topbar nav a')].find((a) => a.textContent.includes('Admin')).click();
+      return true;
+    `);
+    await waitFor('the admin screen', () =>
+      evaluate('return document.body.innerText.includes("Add an application") ? true : null'),
+    );
+    await evaluate(`
+      const row = [...document.querySelectorAll('table.table tbody tr')]
+        .find((tr) => tr.textContent.includes('UEL Niko Stock'));
+      const select = [...row.querySelectorAll('select')]
+        .find((s) => [...s.options].some((o) => o.value === 'coming_soon'));
+      Object.getOwnPropertyDescriptor(select.constructor.prototype, 'value').set.call(select, 'coming_soon');
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    `);
+    const nowSoon = await waitFor('the change to take', () =>
+      evaluate(`
+        const row = [...document.querySelectorAll('table.table tbody tr')]
+          .find((tr) => tr.textContent.includes('UEL Niko Stock'));
+        const select = [...row.querySelectorAll('select')]
+          .find((s) => [...s.options].some((o) => o.value === 'coming_soon'));
+        return select && select.value === 'coming_soon' ? true : null;
+      `),
+    ).catch(() => null);
+    nowSoon ? pass() : fail('the tile did not switch to Coming soon');
+
+    step('it stays on the landing page, greyed and not a link (D21)');
+    await evaluate(`
+      [...document.querySelectorAll('.topbar nav a')].find((a) => a.textContent.includes('Applications')).click();
+      return true;
+    `);
+    await waitFor('the tiles', () => evaluate('return !!document.querySelector(".tiles .tile")'));
+    const soonTile = await waitFor('the greyed tile', () =>
+      evaluate(`
+        const tile = [...document.querySelectorAll('.tile')]
+          .find((t) => t.textContent.includes('UEL Niko Stock'));
+        if (!tile) return null;
+        return {
+          total: document.querySelectorAll('.tile').length,
+          soon: tile.classList.contains('tile-soon'),
+          tag: tile.tagName,
+          href: tile.getAttribute('href'),
+          says: tile.textContent.includes('Not available yet'),
+        };
+      `),
+    ).catch(() => null);
+    soonTile &&
+    soonTile.total === 7 &&
+    soonTile.soon === true &&
+    soonTile.tag === 'DIV' &&
+    soonTile.href === null &&
+    soonTile.says === true
+      ? pass()
+      : fail(`expected a greyed, non-link tile still on the page, saw ${JSON.stringify(soonTile)}`);
+
+    step('and it goes back to Live');
+    await evaluate(`
+      [...document.querySelectorAll('.topbar nav a')].find((a) => a.textContent.includes('Admin')).click();
+      return true;
+    `);
+    await waitFor('the admin screen', () =>
+      evaluate('return document.body.innerText.includes("Add an application") ? true : null'),
+    );
+    await evaluate(`
+      const row = [...document.querySelectorAll('table.table tbody tr')]
+        .find((tr) => tr.textContent.includes('UEL Niko Stock'));
+      const select = [...row.querySelectorAll('select')]
+        .find((s) => [...s.options].some((o) => o.value === 'coming_soon'));
+      Object.getOwnPropertyDescriptor(select.constructor.prototype, 'value').set.call(select, 'live');
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    `);
+    const backLive = await waitFor('it to go back', () =>
+      evaluate(`
+        const row = [...document.querySelectorAll('table.table tbody tr')]
+          .find((tr) => tr.textContent.includes('UEL Niko Stock'));
+        const select = [...row.querySelectorAll('select')]
+          .find((s) => [...s.options].some((o) => o.value === 'coming_soon'));
+        return select && select.value === 'live' ? true : null;
+      `),
+    ).catch(() => null);
+    backLive ? pass() : fail('the tile did not go back to Live');
+
     // The demo backend's access rules are the same code the real one uses, so demoting the demo
     // user to Member is enough to see a real padlock.
     step('a member sees it padlocked, and it is not a link');
@@ -612,7 +699,7 @@ async function main() {
       return true;
     `);
     await waitFor('the people tab', () =>
-      evaluate('return document.body.innerText.includes("create-user.mjs") ? true : null'),
+      evaluate('return document.body.innerText.includes("Invite somebody") ? true : null'),
     );
     await evaluate(`
       const select = document.querySelector('table.table tbody select');

@@ -10,6 +10,9 @@ import {
   normaliseUrl,
   slugify,
   visibleLinks,
+  STATUS_DESCRIPTIONS,
+  STATUS_LABELS,
+  type LinkStatus,
 } from '../../engine/links';
 import type { NewPortalLink, PortalLink } from '../../backend/types';
 import { useApp } from '../../state/AppContext';
@@ -22,7 +25,7 @@ const BLANK: NewPortalLink = {
   colour: '#0f4c81',
   accessMode: 'everyone',
   sortOrder: 99,
-  isActive: true,
+  status: 'live',
 };
 
 export function LinksTab() {
@@ -67,7 +70,7 @@ export function LinksTab() {
         colour: link.colour,
         sortOrder: link.sortOrder,
         accessMode: link.accessMode,
-        isActive: link.isActive,
+        status: link.status,
       },
     });
   }
@@ -107,11 +110,11 @@ export function LinksTab() {
     }
   }
 
-  async function toggleActive(link: PortalLink) {
+  async function setStatus(link: PortalLink, status: LinkStatus) {
     try {
-      await backend.updateLink(link.id, { isActive: !link.isActive });
+      await backend.updateLink(link.id, { status });
       await reload();
-      toast.say(link.isActive ? `${link.name} hidden.` : `${link.name} is on the portal.`);
+      toast.say(`${link.name} is now ${STATUS_LABELS[status].toLowerCase()}.`);
     } catch (err) {
       toast.bad((err as Error).message);
     }
@@ -132,7 +135,7 @@ export function LinksTab() {
     }
   }
 
-  const rows = visibleLinks(links ?? [], { includeHidden: true });
+  const rows = visibleLinks(links ?? [], { includeRetired: true });
 
   return (
     <div>
@@ -142,7 +145,8 @@ export function LinksTab() {
         </button>
         <span className="spacer" />
         <span className="muted small">
-          {rows.filter((l) => l.isActive).length} on the portal, {rows.length} in all
+          {rows.filter((l) => l.status === 'live').length} live,{' '}
+          {rows.filter((l) => l.status === 'coming_soon').length} coming soon, {rows.length} in all
         </span>
       </div>
 
@@ -163,7 +167,7 @@ export function LinksTab() {
                   <th>Address</th>
                   <th>Short name</th>
                   <th>Who</th>
-                  <th>On the portal</th>
+                  <th>State</th>
                   <th />
                 </tr>
               </thead>
@@ -184,20 +188,21 @@ export function LinksTab() {
                       </span>
                     </td>
                     <td>
-                      <span className={link.isActive ? 'pill pill-ok' : 'pill'}>
-                        {link.isActive ? 'Shown' : 'Hidden'}
-                      </span>
+                      <select
+                        value={link.status}
+                        aria-label={`State of ${link.name}`}
+                        onChange={(e) => void setStatus(link, e.target.value as LinkStatus)}
+                      >
+                        {(['live', 'coming_soon', 'retired'] as LinkStatus[]).map((s) => (
+                          <option key={s} value={s}>
+                            {STATUS_LABELS[s]}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="right nowrap">
                       <button type="button" className="btn btn-small" onClick={() => startEdit(link)}>
                         Edit
-                      </button>{' '}
-                      <button
-                        type="button"
-                        className="btn btn-small"
-                        onClick={() => void toggleActive(link)}
-                      >
-                        {link.isActive ? 'Hide' : 'Show'}
                       </button>{' '}
                       <button
                         type="button"
@@ -340,16 +345,28 @@ export function LinksTab() {
             </p>
           </div>
 
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={editing.draft.isActive}
+          <div className="field">
+            <label htmlFor="link-status">State</label>
+            <select
+              id="link-status"
+              value={editing.draft.status}
               onChange={(e) =>
-                setEditing({ ...editing, draft: { ...editing.draft, isActive: e.target.checked } })
+                setEditing({
+                  ...editing,
+                  draft: { ...editing.draft, status: e.target.value as LinkStatus },
+                })
               }
-            />
-            Show it on the portal
-          </label>
+            >
+              {(['live', 'coming_soon', 'retired'] as LinkStatus[]).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </option>
+              ))}
+            </select>
+            <p className="tiny muted" style={{ marginTop: 4 }}>
+              {STATUS_DESCRIPTIONS[editing.draft.status]}
+            </p>
+          </div>
         </Modal>
       ) : null}
 

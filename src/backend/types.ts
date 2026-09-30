@@ -86,10 +86,10 @@ export interface Backend {
   setPassword(password: string): Promise<void>;
   onPasswordRecovery(handler: () => void): () => void;
 
-  listLinks(includeHidden?: boolean): Promise<PortalLink[]>;
+  listLinks(includeRetired?: boolean): Promise<PortalLink[]>;
   createLink(link: NewPortalLink): Promise<PortalLink>;
   updateLink(id: string, change: Partial<NewPortalLink>): Promise<PortalLink>;
-  /** Retires the tile (D6). Deletes it outright only if nobody has ever opened it. */
+  /** Retires the tile (D6, D21). Deletes it outright only if nobody has ever opened it. */
   removeLink(id: string): Promise<{ deleted: boolean }>;
 
   /**
@@ -97,6 +97,24 @@ export interface Backend {
    * open is open to everybody, so this is all the landing page needs (D18).
    */
   listMyAccess(): Promise<string[]>;
+
+  /**
+   * Invites somebody, optionally granting applications at the same time (D22).
+   *
+   * Goes through the `user-management` Edge Function, because creating an account needs the
+   * service-role key and that key can never reach a browser. Returns a warning when the account
+   * was made but the grants were not - the invitation has already gone out by then and cannot be
+   * taken back, so it is reported rather than thrown.
+   */
+  inviteUser(input: {
+    email: string;
+    displayName: string;
+    role: Role;
+    linkIds?: string[];
+  }): Promise<{ user: User | null; warning: string | null }>;
+
+  /** Sends a fresh link to somebody who lost theirs. */
+  resendInvite(userId: string): Promise<void>;
 
   listUsers(): Promise<User[]>;
   updateUser(id: string, change: { role?: Role; isActive?: boolean; displayName?: string }): Promise<User>;

@@ -70,7 +70,9 @@ runs against IndexedDB with a demo administrator and the seven seeded tiles, and
 bundle with `DEMO_BUILD=1`, which blanks the Supabase values whatever `.env.local` says, so it can
 never touch the real user list. *Assumed, following UELNikoBooking.*
 
-**D10 — No Edge Function, and no inviting from the browser.** Creating an account needs the
+**D10 — No Edge Function, and no inviting from the browser.** *(Superseded by D22 on 30 September
+2026: Patrick needs to add people himself, so the function now exists. The reasoning below was
+sound for a portal nobody else administered; the requirement changed, not the argument.)* Creating an account needs the
 service-role key. UELNikoBooking wraps that in a `user-management` Edge Function so an administrator
 can invite somebody from the Admin screen. The portal does not: it is a launcher with a handful of
 users, and a function to deploy, secure and maintain is not worth it for a command Patrick runs a
@@ -220,3 +222,40 @@ Not a catastrophe: a tile's address is not secret and each application has its o
 afternoon should not be publishing its address to everyone meanwhile. Administrators still read
 everything, because the Admin screen has to list hidden tiles in order to switch them back on.
 *Found and fixed 30 September 2026, `0005_hidden_tiles.sql`.*
+
+**D21 — A tile has three states, because one boolean was doing two jobs.** Patrick asked for
+applications that are not ready to appear on the landing page greyed out, rather than vanish. But
+`is_active = false` was already doing a second job: `Remove` used it to retire a tile somebody had
+opened (D6), and a retired application must not sit on the page forever. One flag cannot mean both
+"not yet" and "no longer".
+
+So: `live`, `coming_soon` (on the page, greyed, inert, "Not available yet") and `retired` (off the
+page; administrators still see it, to bring it back). `is_active` was **dropped** rather than left
+beside the new column — a column that no longer decides anything but still looks like it does is
+how the next person introduces a bug.
+
+`visibleLinks` deliberately does **not** filter out `coming_soon`; `LinkCard` greys it. A tile
+filtered out in the engine could never be shown as coming soon however it was styled, and putting
+the decision in one place keeps the two states honest. *Decided with Patrick, 30 September 2026.*
+
+**D22 — A `user-management` Edge Function, reversing D10.** Patrick needs to add people and grant
+them applications himself, rather than asking for a command to be run on the office PC. Creating an
+account needs the service-role key, and that key can never go near a browser, so the only way is a
+function that holds it server-side.
+
+D10 argued this was not worth it. That was right for a portal only I administered and wrong the
+moment Patrick had to do it himself, which is the whole point of an admin screen.
+
+The function's own check is the entire protection: the service-role key bypasses Row Level Security
+completely, so nothing downstream will catch a caller who should not be there. It verifies the
+token, reads the caller's role from `profiles` — never from anything the caller sent — and refuses
+anyone who is not an active administrator. `npm run verify:rls` proves that from the outside, as a
+member and as a stranger, and checks no account was created by either attempt.
+
+Inviting can grant applications in the same action, so adding a new starter is one dialog rather
+than two. If the grant fails after the account is made, it is reported as a warning rather than
+thrown: the invitation has already gone out by then and cannot be recalled, so pretending the whole
+thing failed would be a lie.
+
+`scripts/create-user.mjs` stays. It is how the very first administrator is made, before anybody can
+sign in to invite anyone. *Decided with Patrick, 30 September 2026.*

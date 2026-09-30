@@ -17,7 +17,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#1f7a6c',
     sortOrder: 1,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
   {
     slug: 'crm',
@@ -27,7 +27,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#0f4c81',
     sortOrder: 2,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
   {
     slug: 'sales',
@@ -37,7 +37,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#9a5b12',
     sortOrder: 3,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
   {
     slug: 'stock',
@@ -47,7 +47,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#6b3fa0',
     sortOrder: 4,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
   {
     slug: 'sop',
@@ -57,7 +57,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#a33b2a',
     sortOrder: 5,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
   {
     slug: 'pod',
@@ -67,7 +67,7 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#2e6b3e',
     sortOrder: 6,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
   {
     slug: 'booking',
@@ -77,6 +77,6 @@ export const SEED_LINKS: NewPortalLink[] = [
     colour: '#0d7490',
     sortOrder: 7,
     accessMode: 'everyone',
-    isActive: true,
+    status: 'live',
   },
 ];

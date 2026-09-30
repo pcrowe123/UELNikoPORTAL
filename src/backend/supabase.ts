@@ -12,6 +12,7 @@
 
 import { createClient, type SupabaseClient, type User as AuthUser } from '@supabase/supabase-js';
 import type { AccessMode } from '../engine/access';
+import type { LinkStatus } from '../engine/links';
 import {
   DEFAULT_SETTINGS,
   type AppSettings,
@@ -39,7 +40,7 @@ interface LinkRow {
   url: string;
   colour: string;
   sort_order: number;
-  is_active: boolean;
+  status: LinkStatus;
   access_mode: AccessMode;
   created_at: string;
   updated_at: string;
@@ -73,7 +74,7 @@ const linkFromRow = (r: LinkRow): PortalLink => ({
   url: r.url,
   colour: r.colour,
   sortOrder: r.sort_order,
-  isActive: r.is_active,
+  status: r.status ?? 'live',
   // A row written before 0003 has no access_mode; treat it as open, which is what it was.
   accessMode: r.access_mode ?? 'everyone',
   createdAt: r.created_at,
@@ -88,7 +89,7 @@ const linkToRow = (l: Partial<NewPortalLink>): Record<string, unknown> => {
   if (l.url !== undefined) row.url = l.url;
   if (l.colour !== undefined) row.colour = l.colour;
   if (l.sortOrder !== undefined) row.sort_order = l.sortOrder;
-  if (l.isActive !== undefined) row.is_active = l.isActive;
+  if (l.status !== undefined) row.status = l.status;
   if (l.accessMode !== undefined) row.access_mode = l.accessMode;
   return row;
 };
@@ -104,6 +105,27 @@ const auditFromRow = (r: AuditRow): AuditEntry => {
     detail: r.detail ?? '',
   };
 };
+
+/**
+ * Dig the function's own error message out of a FunctionsHttpError.
+ *
+ * supabase-js throws a generic "non-2xx status code" for any error response and hides the body on
+ * `error.context`, which is the original Response. Without this the careful sentences in
+ * `user-management` never reach anybody.
+ */
+async function readFunctionError(error: unknown, fallback: string): Promise<string> {
+  const context = (error as { context?: unknown }).context;
+  if (context instanceof Response) {
+    try {
+      const body = await context.clone().json();
+      if (typeof body?.error === 'string') return body.error;
+    } catch {
+      /* not JSON; fall through to the generic message */
+    }
+  }
+  const message = (error as Error)?.message;
+  return message && !/non-2xx/i.test(message) ? message : fallback;
+}
 
 /** Turn a Postgres error into something a person can read. */
 function explain(error: { code?: string; message: string } | null): never {
@@ -230,9 +252,9 @@ export function createSupabaseBackend(url: string, anonKey: string, sessionKey: 
       return () => recoveryHandlers.delete(handler);
     },
 
-    async listLinks(includeHidden = false) {
+    async listLinks(includeRetired = false) {
       let query = client.from('portal_links').select('*').order('sort_order');
-      if (!includeHidden) query = query.eq('is_active', true);
+      if (!includeRetired) query = query.neq('status', 'retired');
       const { data, error } = await query;
       if (error) explain(error);
       return (data as LinkRow[]).map(linkFromRow);
@@ -272,7 +294,7 @@ export function createSupabaseBackend(url: string, anonKey: string, sessionKey: 
       if ((count ?? 0) > 0) {
         const { error } = await client
           .from('portal_links')
-          .update({ is_active: false })
+          .update({ status: 'retired' })
           .eq('id', id);
         if (error) explain(error);
         return { deleted: false };
@@ -334,6 +356,29 @@ export function createSupabaseBackend(url: string, anonKey: string, sessionKey: 
         );
         if (error) explain(error);
       }
+    },
+
+    async inviteUser({ email, displayName, role, linkIds }) {
+      const { data, error } = await client.functions.invoke('user-management', {
+        body: { action: 'invite', email, displayName, role, linkIds },
+      });
+      // A non-2xx from an Edge Function arrives as an error with the body buried inside it, so the
+      // sentence the function took care to write has to be dug back out or the person sees
+      // "Edge Function returned a non-2xx status code" and nothing useful.
+      if (error) throw new Error(await readFunctionError(error, 'That invitation did not send.'));
+      if (!data?.ok) throw new Error(data?.error ?? 'That invitation did not send.');
+      return {
+        user: data.user ? userFromRow(data.user as ProfileRow) : null,
+        warning: (data.warning as string | null) ?? null,
+      };
+    },
+
+    async resendInvite(userId) {
+      const { data, error } = await client.functions.invoke('user-management', {
+        body: { action: 'resend', userId },
+      });
+      if (error) throw new Error(await readFunctionError(error, 'That did not send.'));
+      if (!data?.ok) throw new Error(data?.error ?? 'That did not send.');
     },
 
     async listUsers() {

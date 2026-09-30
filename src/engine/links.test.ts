@@ -21,7 +21,7 @@ const link = (over: Partial<LinkLike> = {}): LinkLike => ({
   url: 'https://uelnikobooking.com',
   colour: '#0f4c81',
   sortOrder: 1,
-  isActive: true,
+  status: 'live',
   ...over,
 });
 
@@ -173,12 +173,19 @@ describe('sortLinks and visibleLinks', () => {
   });
 
   it('leaves retired tiles off the landing page but finds them for the admin', () => {
-    const links = [link({ id: 'on' }), link({ id: 'off', isActive: false })];
+    const links = [link({ id: 'on' }), link({ id: 'off', status: 'retired' })];
     expect(visibleLinks(links).map((l) => l.id)).toEqual(['on']);
-    expect(visibleLinks(links, { includeHidden: true }).map((l) => l.id).sort()).toEqual([
+    expect(visibleLinks(links, { includeRetired: true }).map((l) => l.id).sort()).toEqual([
       'off',
       'on',
     ]);
+  });
+
+  it('keeps "coming soon" tiles on the landing page (D21)', () => {
+    // The point of the state: LinkCard greys them, visibleLinks does not drop them. A tile that
+    // is filtered out here can never be shown as coming soon, however it is styled.
+    const links = [link({ id: 'live' }), link({ id: 'soon', status: 'coming_soon' })];
+    expect(visibleLinks(links).map((l) => l.id).sort()).toEqual(['live', 'soon']);
   });
 });
 

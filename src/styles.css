@@ -252,6 +252,22 @@ a:hover, .link:hover { text-decoration: underline; }
 .tile-broken { cursor: default; background: #fdf8ec; border-color: #f0dcae; }
 .tile-broken:hover { transform: none; box-shadow: var(--shadow); border-color: #f0dcae; }
 
+/* An application that is not ready yet (D21). Legible and obviously inert - no hatching, because
+   this is not about permission: there is simply nothing to open. */
+.tile-soon {
+  cursor: default;
+  background: var(--card);
+  border-style: dashed;
+  border-color: #d3d9e2;
+  box-shadow: none;
+}
+.tile-soon:hover { transform: none; box-shadow: none; border-color: #d3d9e2; }
+.tile-soon .tile-badge { opacity: 0.35; }
+.tile-soon .tile-words b { color: var(--muted); }
+.tile-soon .tile-tagline { color: #a6aeba; }
+.tile-soon .tile-host { font-family: var(--font); font-weight: 600; color: var(--muted); }
+.tile-soon .tile-go { opacity: 0.4; }
+
 /* An application this person has not been given (D18). Present, legible and obviously unavailable:
    they should be able to see it exists and ask for it, which is the point of blocking rather than
    hiding. It is a <button>, so the text alignment the tile layout assumes has to be restored. */

@@ -133,10 +133,10 @@ export function createLocalBackend(): Backend {
       return () => {};
     },
 
-    async listLinks(includeHidden = false) {
+    async listLinks(includeRetired = false) {
       await prepare();
       const all = await db.links.toArray();
-      return includeHidden ? all : all.filter((l) => l.isActive);
+      return includeRetired ? all : all.filter((l) => l.status !== 'retired');
     },
 
     async createLink(link: NewPortalLink) {
@@ -180,6 +180,25 @@ export function createLocalBackend(): Backend {
       await db.access.bulkAdd(
         linkIds.map((linkId) => ({ key: `${userId}:${linkId}`, userId, linkId })),
       );
+    },
+
+    async inviteUser({ email, displayName, role, linkIds }) {
+      await prepare();
+      const user: User = {
+        id: newId(),
+        email: email.trim().toLowerCase(),
+        displayName: displayName.trim() || email,
+        role,
+        isActive: true,
+      };
+      await db.users.add(user);
+      if (linkIds?.length) await this.setAccessFor(user.id, linkIds);
+      // No email in the demo, obviously. The screen says so.
+      return { user, warning: null };
+    },
+
+    async resendInvite() {
+      // Nothing to send.
     },
 
     async listUsers() {

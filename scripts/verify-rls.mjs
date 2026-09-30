@@ -56,13 +56,14 @@ async function api(path, { token = ANON, method = 'GET', body, headers = {} } = 
   return { status: res.status, ok: res.ok, body: json ?? text };
 }
 
-async function admin(path, { method = 'POST', body } = {}) {
+async function admin(path, { method = 'POST', body, headers = {} } = {}) {
   const res = await fetch(`${URL_}${path}`, {
     method,
     headers: {
       apikey: SERVICE,
       Authorization: `Bearer ${SERVICE}`,
       'Content-Type': 'application/json',
+      ...headers,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
@@ -138,21 +139,21 @@ try {
   // in 0002 did not break the policies, which all call current_user_active().
   // Not a magic number: the count is asked of the database itself, so adding or hiding a tile
   // never makes this check fail for a reason that has nothing to do with the rule it is testing.
-  step('a member sees every tile that is switched on (D3)');
-  const shownToAll = await admin('/rest/v1/portal_links?select=slug&is_active=eq.true', {
+  step('a member sees every tile that is not retired (D3, D21)');
+  const shownToAll = await admin('/rest/v1/portal_links?select=slug&status=neq.retired', {
     method: 'GET',
   });
-  const tiles = await api('/rest/v1/portal_links?select=slug&is_active=eq.true', {
+  const tiles = await api('/rest/v1/portal_links?select=slug&status=neq.retired', {
     token: member.token,
   });
   tiles.ok && tiles.body.length === shownToAll.length && shownToAll.length > 0
     ? pass()
     : fail(
-        `a member saw ${tiles.body?.length} of the ${shownToAll.length} switched-on tiles: ${JSON.stringify(tiles.body)}`,
+        `a member saw ${tiles.body?.length} of the ${shownToAll.length} non-retired tiles: ${JSON.stringify(tiles.body)}`,
       );
 
-  step('a member does not see a tile that is switched off');
-  const hiddenToMember = await api('/rest/v1/portal_links?select=slug&is_active=eq.false', {
+  step('a member does not see a retired tile (SE-10)');
+  const hiddenToMember = await api('/rest/v1/portal_links?select=slug&status=eq.retired', {
     token: member.token,
   });
   Array.isArray(hiddenToMember.body) && hiddenToMember.body.length === 0
@@ -383,17 +384,57 @@ try {
     : fail(`expected the access_mode check to refuse it, got ${badMode.status} ${JSON.stringify(badMode.body)}`);
 
   // SE-02. The session is still valid; the profile is not.
+  //
+  // The deactivation is checked rather than assumed. It used to be wrapped in a swallowed catch,
+  // and when a careless edit turned it into a PATCH of a column profiles does not have, the step
+  // failed with "a deactivated administrator still saw..." - which is a lie: nobody had been
+  // deactivated at all. A setup step that can fail silently turns a real check into a riddle.
   step('a deactivated account loses its access at once (SE-02)');
-  await admin('/rest/v1/profiles?id=eq.' + boss.id, {
+  const deactivated = await admin(`/rest/v1/profiles?id=eq.${boss.id}&select=is_active`, {
     method: 'PATCH',
     body: { is_active: false },
-  }).catch(() => {});
-  const afterDeactivation = await api('/rest/v1/portal_links?select=slug', { token: boss.token });
-  Array.isArray(afterDeactivation.body) && afterDeactivation.body.length === 0
+    headers: { Prefer: 'return=representation' },
+  }).catch((err) => ({ error: String(err.message ?? err) }));
+
+  if (!Array.isArray(deactivated) || deactivated[0]?.is_active !== false) {
+    fail(`could not deactivate the test administrator: ${JSON.stringify(deactivated)}`);
+  } else {
+    const afterDeactivation = await api('/rest/v1/portal_links?select=slug', { token: boss.token });
+    Array.isArray(afterDeactivation.body) && afterDeactivation.body.length === 0
+      ? pass()
+      : fail(
+          `a deactivated administrator still saw ${JSON.stringify(afterDeactivation.body)} with their existing token`,
+        );
+  }
+
+  // The user-management Edge Function holds the service-role key, which bypasses RLS entirely.
+  // Its own admin check is therefore the whole of the protection, and is worth proving from
+  // outside rather than trusting (D22).
+  step('a member cannot invite anybody through the Edge Function (D22)');
+  const memberInvite = await api('/functions/v1/user-management', {
+    token: member.token,
+    method: 'POST',
+    body: { action: 'invite', email: 'should-never-exist@invalid.test', role: 'admin' },
+  });
+  memberInvite.status === 403
     ? pass()
-    : fail(
-        `a deactivated administrator still saw ${JSON.stringify(afterDeactivation.body)} with their existing token`,
-      );
+    : fail(`a member reached the invite function: ${memberInvite.status} ${JSON.stringify(memberInvite.body)}`);
+
+  step('a stranger with only the anon key cannot either');
+  const anonInvite = await api('/functions/v1/user-management', {
+    method: 'POST',
+    body: { action: 'invite', email: 'should-never-exist@invalid.test', role: 'admin' },
+  });
+  anonInvite.status >= 400
+    ? pass()
+    : fail(`anon reached the invite function: ${anonInvite.status} ${JSON.stringify(anonInvite.body)}`);
+
+  step('and nobody was created by either attempt');
+  const ghost = await admin(
+    '/rest/v1/profiles?select=email&email=eq.should-never-exist@invalid.test',
+    { method: 'GET' },
+  );
+  ghost.length === 0 ? pass() : fail(`an account was created: ${JSON.stringify(ghost)}`);
 
   step('the migration ledger is not served to anybody');
   const ledger = await api('/rest/v1/app_migrations?select=name');

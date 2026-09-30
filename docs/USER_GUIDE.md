@@ -61,6 +61,15 @@ browser you are using cannot install it. The button hides rather than sitting th
 Installing changes nothing about how you sign in, and it does not store anything about the
 applications on your device. It is a smarter shortcut, nothing more.
 
+### A greyed tile that says "Not available yet"
+
+An application that is still being built appears in its place on the page, greyed out and not
+clickable. It is there so you can see what is coming rather than being surprised by it one morning.
+There is nothing to do; it will become an ordinary tile when it is ready.
+
+That is different from a padlock, below: a greyed tile is not ready for *anybody*, a padlocked one
+is working but has not been given to *you*.
+
 ### A tile with a padlock on it
 
 Some applications are given out individually. If you have not been given one, its tile still appears
@@ -102,7 +111,12 @@ Member, and deactivate somebody who has left, which stops them signing in to the
 You cannot change your own role or deactivate yourself — that is deliberate, so nobody can lock
 everybody out, themselves included.
 
-To add a new person, Patrick runs one command on the office PC. The tab shows you what it is.
+**Invite somebody** adds a new person. Give their email and name, choose Administrator or Member,
+and — if you like — tick the invitation-only applications they should have straight away, so a new
+starter is set up in one go rather than two. They get an email with a link and choose their own
+password; nobody here ever knows it.
+
+If somebody loses their link or it expires, **Resend link** sends a fresh one.
 
 Note that deactivating somebody here only closes the **portal** door. Their accounts on the
 applications themselves are separate, and have to be closed in each application.
@@ -111,7 +125,7 @@ applications themselves are separate, and have to be closed in each application.
 
 Two steps, and they are on different tabs.
 
-First, on **Applications**, edit the application and set **Who may open it** to *By invitation*. Its
+First, on **Applications**, set **Who may open it** to *By invitation*. Its
 row then shows a padlock. Everything is *Everyone* until you do this, so nothing changes for anybody
 until you decide it should.
 
@@ -125,6 +139,15 @@ Anything left unticked shows that person a padlock rather than nothing.
 Worth repeating, because it matters: this changes what the portal *shows*, not what an application
 *allows*. It is a tidy way to point people at the right things, not a way to keep anybody out of
 something. For that, close their account in the application itself.
+
+### Taking an application off the page
+
+Each application on the **Applications** tab is **Live**, **Coming soon** or **Retired**.
+
+- **Live** — the ordinary case.
+- **Coming soon** — still on the landing page, greyed out and not clickable. Use it for one that is
+  not ready yet, or one that is down for the day.
+- **Retired** — off the landing page completely. Only you see it here, so you can bring it back.
 
 **Settings** holds the line of text under the heading on the landing page, whether tiles open in a
 new tab, and whether the search box appears.

@@ -4,6 +4,30 @@
 // Pure TypeScript. No React, no network, no clock of its own (CLAUDE.md rule 8). That is what
 // makes all of it testable, including the rule that keeps a hostile URL out of the page.
 
+/**
+ * What state a tile is in (D21).
+ *
+ *   live         the ordinary case
+ *   coming_soon  on the page, greyed and not clickable: an application that is not ready yet
+ *   retired      off the page entirely, kept only so the activity log still makes sense
+ *
+ * Three states rather than one boolean, because "not yet" and "no longer" look the same to a flag
+ * and completely different to a person.
+ */
+export type LinkStatus = 'live' | 'coming_soon' | 'retired';
+
+export const STATUS_LABELS: Record<LinkStatus, string> = {
+  live: 'Live',
+  coming_soon: 'Coming soon',
+  retired: 'Retired',
+};
+
+export const STATUS_DESCRIPTIONS: Record<LinkStatus, string> = {
+  live: 'On the landing page and working.',
+  coming_soon: 'On the landing page, greyed out and not clickable. Use this for one that is not ready yet.',
+  retired: 'Off the landing page completely. Only administrators see it here.',
+};
+
 /** The shape the engine needs. `backend/types.ts` adds the bookkeeping columns to it. */
 export interface LinkLike {
   id: string;
@@ -18,7 +42,7 @@ export interface LinkLike {
   /** Tile accent, `#rrggbb`. */
   colour: string;
   sortOrder: number;
-  isActive: boolean;
+  status: LinkStatus;
 }
 
 /**
@@ -134,12 +158,17 @@ export function sortLinks<T extends LinkLike>(links: readonly T[]): T[] {
   );
 }
 
-/** The tiles to show. Retired ones are kept in the table but never put on the landing page. */
+/**
+ * The tiles to put on the landing page: everything except what has been retired.
+ *
+ * `coming_soon` is included on purpose - that is the whole point of the state. It is drawn greyed
+ * by `LinkCard`, not filtered out here, so people can see what is on the way (D21).
+ */
 export function visibleLinks<T extends LinkLike>(
   links: readonly T[],
-  { includeHidden = false }: { includeHidden?: boolean } = {},
+  { includeRetired = false }: { includeRetired?: boolean } = {},
 ): T[] {
-  return sortLinks(includeHidden ? links : links.filter((l) => l.isActive));
+  return sortLinks(includeRetired ? links : links.filter((l) => l.status !== 'retired'));
 }
 
 /**
