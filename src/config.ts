@@ -15,8 +15,14 @@ export const APP = {
   company: 'Uppercross Enterprises Ltd / Niko Bathrooms',
   supabaseUrl: clean(env.VITE_SUPABASE_URL),
   supabaseAnonKey: clean(env.VITE_SUPABASE_ANON_KEY),
-  /** Where the login page says invitation and password-reset mail comes from. */
-  authEmailFrom: 'portal@uel.ie',
+  /**
+   * Where the login page says invitation and password-reset mail comes from.
+   *
+   * This has to match the sender configured in Supabase Auth's SMTP settings, or the login page
+   * tells people to look for mail from an address that will never appear in their inbox. Set to
+   * `noreply@uel.ie` on 30 September 2026 to match what is actually configured.
+   */
+  authEmailFrom: 'noreply@uel.ie',
   sessionKey: 'uelnikoportal-auth',
 } as const;
 

@@ -44,6 +44,10 @@ immediately even holding a valid token (SE-02).
   settings are seeded. No accounts yet, and the activity log is empty.
 - **Domain `uelnikoportal.com`** — registered 30 September 2026, and the zone is in this
   Cloudflare account (account `f96d22a4a289d4a088d3539d2e84dc4f`, `pcrowe123@gmail.com`).
+- **Sender mail** — Supabase Auth's custom SMTP is on and pointed at Resend
+  (`smtp.resend.com:465`, user `resend`), sending as **`noreply@uel.ie`** with the display name
+  "UEL and Niko Bathrooms". Configured by Patrick, 30 September 2026. `src/config.ts` names the same
+  address on the login page; keep the two in step.
 - **Deployed** — Worker `uelnikoportal`, 30 September 2026. Both custom domains attached; Cloudflare
   created the DNS records and issued the certificate. Verified live: the portal's own HTML is
   served, the SPA fallback works (`/login` and `/admin` both return 200 rather than a 404), `www`
@@ -59,28 +63,7 @@ immediately even holding a valid token (SE-02).
 
 ## What is waiting on Patrick
 
-**1. Set up sender mail.** Invitations and password resets go through Supabase Auth's SMTP settings.
-Go to https://supabase.com/dashboard/project/zeujzuxkjozlelayerkz/auth/smtp — **Authentication** is
-a top-level section in the narrow icon rail down the far-left edge of the dashboard (the padlock,
-above Storage). It is *not* under Project Settings, whatever older notes say. Turn on **Enable
-Custom SMTP**, then point it at Resend:
-
-| | |
-|---|---|
-| Host | `smtp.resend.com` |
-| Port | `465` |
-| Username | `resend` |
-| Password | your Resend API key |
-| Sender | `portal@uel.ie` |
-| Sender name | `UEL / Niko Portal` |
-
-`uel.ie` has to be a verified sending domain in Resend — it already is, for Booking. Put the same
-password in `.env` as `SMTP_PASS` so the scripts can see it.
-
-Until this is done, invitation mail goes through Supabase's own sender, which is rate-limited to a
-few messages an hour. Fine for testing with one address; not enough to invite a dozen people.
-
-**2. Tell Supabase Auth where the portal lives.**
+**1. Tell Supabase Auth where the portal lives.**
 https://supabase.com/dashboard/project/zeujzuxkjozlelayerkz/auth/url-configuration
 
 | | |
@@ -93,11 +76,11 @@ to `<APP_URL>/reset-password`, and Supabase **refuses a redirect it has not been
 it silently falls back to the Site URL instead, which is `http://localhost:3000` on a new project.
 The invitation still arrives; it just takes the person somewhere that is not the portal.
 
-**3. The first administrator — last, not first.** Nobody can sign in until this is run, and it
+**2. The first administrator — last, not first.** Nobody can sign in until this is run, and it
 cannot be done from the app, because there is no signup page (D4).
 
 Decided with Patrick, 30 September 2026: the account is **`pcrowe123@gmail.com`**, and the
-invitation waits until Resend is configured so it arrives from `portal@uel.ie` rather than
+invitation waits until Resend is configured so it arrives from `noreply@uel.ie` rather than
 Supabase's rate-limited sender.
 
 ```
@@ -108,7 +91,7 @@ It **sends a real email**. Patrick gets a link and chooses his own password; nob
 it. That address is then his portal login — unrelated to his accounts on any of the seven
 applications (D2).
 
-**4. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
+**3. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
 written for them and explains the one thing worth understanding — that the portal password is not
 the same as their password for any of the applications.
 

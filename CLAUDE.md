@@ -108,8 +108,11 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   The project uses the **legacy** `anon` / `service_role` JWT keys rather than the newer
   `sb_publishable_` / `sb_secret_` pair, to match every sibling application (D15).
 - **Email**: invitations and password resets go through Supabase Auth's SMTP settings, pointed at
-  Resend with sender `portal@uel.ie`. There are no Edge Functions in this project and no application
-  mail of its own (D10).
+  Resend, sender `noreply@uel.ie`. **That address has to stay in step with `APP.authEmailFrom` in
+  `src/config.ts`**, which is what the login page tells people to look for after asking for a
+  password reset — change one and change the other, or the page names an address that never appears
+  in anybody's inbox. There are no Edge Functions in this project and no application mail of its
+  own (D10).
 - **GitHub `pcrowe123/UELNikoPORTAL`**, private, branch `main`, plain `git push`. Note the casing:
   the repository is `UELNikoPORTAL`, not `UELNikoPortal`. GitHub serves the mixed-case spelling as a
   redirect, so pushing to the wrong one appears to work and prints "This repository moved" — set the
