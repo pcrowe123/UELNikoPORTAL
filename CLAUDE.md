@@ -110,8 +110,10 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
 - **Email**: invitations and password resets go through Supabase Auth's SMTP settings, pointed at
   Resend with sender `portal@uel.ie`. There are no Edge Functions in this project and no application
   mail of its own (D10).
-- **GitHub `pcrowe123/UELNikoPortal`**, private, branch `main`. **Not created yet, and this folder is
-  not a git repository yet** — see `docs/PLAN.md`.
+- **GitHub `pcrowe123/UELNikoPORTAL`**, private, branch `main`, plain `git push`. Note the casing:
+  the repository is `UELNikoPORTAL`, not `UELNikoPortal`. GitHub serves the mixed-case spelling as a
+  redirect, so pushing to the wrong one appears to work and prints "This repository moved" — set the
+  remote to the canonical name rather than living on the redirect.
 
 ## Lessons that cost time
 

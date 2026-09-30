@@ -43,20 +43,14 @@ immediately even holding a valid token (SE-02).
 - **Schema** — `0001_init.sql` and `0002_harden.sql` applied. The seven tiles and the starting
   settings are seeded. No accounts yet, and the activity log is empty.
 - **Domain `uelnikoportal.com`** — registered (confirmed by Patrick, 30 September 2026).
-- **GitHub `pcrowe123/UELNikoPortal`** — created (confirmed by Patrick). The local repository is
-  initialised on `main` with the first commit.
+- **GitHub `pcrowe123/UELNikoPORTAL`** — created, and the first commit is pushed to `main`
+  (30 September 2026). Mind the casing: the repository is `UELNikoPORTAL`. The mixed-case spelling
+  is a GitHub redirect and works, but `origin` is set to the canonical name so nothing depends on
+  it.
 
 ## What is waiting on Patrick
 
-**1. Push the first commit.** The commit is made; the remote has not been set, because the exact
-repository address should be the one you actually created:
-
-```
-git remote add origin https://github.com/pcrowe123/UELNikoPortal.git
-git push -u origin main
-```
-
-**2. Set up sender mail.** Invitations and password resets go through Supabase Auth's SMTP settings.
+**1. Set up sender mail.** Invitations and password resets go through Supabase Auth's SMTP settings.
 On the dashboard → Project Settings → Authentication → SMTP Settings, point them at Resend:
 
 | | |
@@ -74,7 +68,7 @@ password in `.env` as `SMTP_PASS` so the scripts can see it.
 Until this is done, invitation mail goes through Supabase's own sender, which is rate-limited to a
 few messages an hour. Fine for testing with one address; not enough to invite a dozen people.
 
-**3. Say the word on the first administrator.** Nobody can sign in until this is run, and it cannot
+**2. Say the word on the first administrator.** Nobody can sign in until this is run, and it cannot
 be done from the app, because there is no signup page (D4). It **sends a real email**, so it has
 been left for you — tell me which address and I will run it, or run it yourself:
 
@@ -85,7 +79,7 @@ node scripts/create-user.mjs --email patrick@uel.ie --name "Patrick Crowe" --rol
 (Which address? Your Supabase login is `pcrowe123@gmail.com`; the docs assume a `uel.ie` address.
 Whichever you use is the one you will sign in to the portal with.)
 
-**4. Confirm the Cloudflare zone, then deploy.** `wrangler.jsonc` claims `uelnikoportal.com` and
+**3. Confirm the Cloudflare zone, then deploy.** `wrangler.jsonc` claims `uelnikoportal.com` and
 `www.uelnikoportal.com` with `custom_domain: true`, which makes Cloudflare create the DNS records
 and the certificate on deploy — but **only if the zone is already in this Cloudflare account**. If
 the domain is registered somewhere else, move the nameservers to Cloudflare first, or take the two
@@ -95,7 +89,7 @@ the domain is registered somewhere else, move the nameservers to Cloudflare firs
 npm run deploy
 ```
 
-**5. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
+**4. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
 written for them and explains the one thing worth understanding — that the portal password is not
 the same as their password for any of the applications.
 
