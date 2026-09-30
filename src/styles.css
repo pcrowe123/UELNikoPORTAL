@@ -120,6 +120,22 @@ a:hover, .link:hover { text-decoration: underline; }
 .whoami b { display: block; font-weight: 600; }
 .whoami span { color: rgba(255, 255, 255, 0.75); font-size: 12px; }
 
+/* The Install button sits on the blue bar, so it is outlined rather than a white slab. */
+.install-btn {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  font-weight: 600;
+}
+.install-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Numbered steps in the iOS "Add to Home Screen" dialog. */
+.steps { margin: 0 0 12px; padding-left: 22px; }
+.steps li { margin-bottom: 8px; }
+
 .demo-pill {
   background: var(--focus);
   color: #3b2200;
@@ -500,4 +516,18 @@ table.table tr:hover td { background: #fafbfd; }
 @media (max-width: 420px) {
   .topbar nav a { padding: 6px 7px; }
   .brand { font-size: 15px; }
+
+  /* The brand, the install button, the name and Sign out do not all fit across a 390px phone.
+     The arrow alone still reads as "install", and the button keeps its accessible name. */
+  .install-btn-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .install-btn { padding: 4px 8px; }
 }

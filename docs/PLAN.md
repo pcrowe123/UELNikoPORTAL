@@ -17,14 +17,16 @@ deploy.
 | Unit tests | **29 pass** — `npm test`, all of `src/engine/links.ts` |
 | Types | **clean** — `npm run typecheck` |
 | Production build | **clean** — `npm run build` |
-| Browser smoke test | **15 steps pass** — `npm run e2e` |
+| Browser smoke test | **20 steps pass** — `npm run e2e`, at a genuine 390px viewport |
 | Database rules | **17 checks pass** — `npm run verify:rls`, against the live project |
 | Supabase security linter | **no errors**; two expected warnings (D16) |
 
 `npm run e2e` drives the screens in a real headless browser: the seven tiles appear, every one of
 them is an `https` link carrying `rel="noopener noreferrer"` (SE-04), the search box narrows the
 list, nothing overflows a 390px phone, a tile can be added and removed, and a `javascript:` address
-is refused with a sentence rather than saved.
+is refused with a sentence rather than saved. It also checks the app is installable (PL-09) — the
+manifest is complete, every icon it promises really exists and is a PNG, and the Install button
+appears, fits a phone and puts itself away once used.
 
 `npm run verify:rls` drives the database, which is where the enforcement actually lives: a stranger
 with the anon key sees nothing (SE-01), a member sees all seven tiles but cannot add, change or hide
@@ -48,6 +50,8 @@ immediately even holding a valid token (SE-02).
   (`smtp.resend.com:465`, user `resend`), sending as **`noreply@uel.ie`** with the display name
   "UEL and Niko Bathrooms". Configured by Patrick, 30 September 2026. `src/config.ts` names the same
   address on the login page; keep the two in step.
+- **Installable (PL-09, D17)** — manifest, icons and a service worker, with an Install button in
+  the top bar and Share-menu instructions on iOS. Added 30 September 2026.
 - **Deployed** — Worker `uelnikoportal`, 30 September 2026. Both custom domains attached; Cloudflare
   created the DNS records and issued the certificate. Verified live: the portal's own HTML is
   served, the SPA fallback works (`/login` and `/admin` both return 200 rather than a 404), `www`

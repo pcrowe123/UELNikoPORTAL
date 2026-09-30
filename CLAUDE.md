@@ -71,10 +71,10 @@ against the live project and **nobody is ever emailed** (the accounts are made w
 docs/                 SPECIFICATION, DECISIONS, PLAN, USER_GUIDE
 scripts/              setup-supabase.mjs, create-user.mjs, e2e-smoke.mjs, lib/
 supabase/migrations/  0001_init.sql - never edited once shipped
-src/engine/           pure logic: safeHref, normaliseUrl, initials, sort, search
+src/engine/           pure logic: safeHref, normaliseUrl, initials, sort, search, install advice
 src/backend/          the storage interface; supabase.ts and local.ts implement it; seed.ts
 src/state/            React context (AppContext, useApp)
-src/components/       AppShell, LinkCard, Modal, Toast
+src/components/       AppShell, LinkCard, InstallButton, Modal, Toast
 src/screens/          Home (the landing page), Login, ResetPassword, Admin + admin/*Tab
 ```
 
@@ -151,6 +151,16 @@ admin-supplied URL becomes an `href`. Read rule 9 before touching it.
   for `authenticated` and lose it for `anon`; the linter still warns about the former and that
   warning is expected. Note `revoke ... from public` also strips what a role inherits through
   PUBLIC, so the grant has to be given back to `authenticated` explicitly.
+- **`--window-size` cannot make a Chrome window narrower than about 500px on Windows.** The smoke
+  test asked for 390 and laid out at 496 for weeks' worth of runs, so "nothing overflows a 390px
+  screen" was passing without ever seeing a phone. Force the viewport with
+  `Emulation.setDeviceMetricsOverride` instead, which is not bound by the OS window — and assert
+  `document.documentElement.clientWidth` really is what you asked for, so the check cannot go back
+  to passing for the wrong reason.
+- **Headless Chrome never fires `beforeinstallprompt`**, so the Install button never appears on its
+  own and the whole install path would go untested. The smoke test synthesises the event, with
+  `prompt()` and `userChoice` stubbed, which exercises the button, the phone layout and the
+  dismissal. `appinstalled` can be synthesised the same way.
 - **Authentication is not under Project Settings in the Supabase dashboard.** It is a top-level
   section in the far-left icon rail, and the settings worth knowing are at
   `/project/<ref>/auth/smtp` and `/project/<ref>/auth/url-configuration`. Plenty of older notes and

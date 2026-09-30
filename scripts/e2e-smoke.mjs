@@ -226,10 +226,16 @@ async function main() {
       socket.send(JSON.stringify({ id, method, params }));
     });
 
-  /** Run an expression in the page and give back its value. */
+  /**
+   * Run an expression in the page and give back its value.
+   *
+   * The wrapper is `async` so a step can `await fetch(...)` — checking the manifest and its icons
+   * means asking the server for them. `awaitPromise` below then resolves the promise this returns,
+   * so a step that returns a plain value is unaffected.
+   */
   async function evaluate(expression) {
     const out = await send('Runtime.evaluate', {
-      expression: `(() => { ${expression} })()`,
+      expression: `(async () => { ${expression} })()`,
       returnByValue: true,
       awaitPromise: true,
     });
@@ -256,6 +262,17 @@ async function main() {
   try {
     await send('Page.enable');
     await send('Runtime.enable');
+
+    // Windows Chrome refuses to make a window narrower than about 500px, so `--window-size=390`
+    // is quietly ignored and the page lays out at ~496px. This check used to pass for that reason
+    // rather than because the layout worked — it was never seeing a phone at all. The viewport has
+    // to be forced through the protocol, which is not bound by the OS window.
+    await send('Emulation.setDeviceMetricsOverride', {
+      width: PHONE_WIDTH,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
 
     // Console errors are a failure in their own right.
     const consoleErrors = [];
@@ -353,9 +370,109 @@ async function main() {
       const doc = document.documentElement;
       return { scroll: doc.scrollWidth, client: doc.clientWidth };
     `);
-    overflow.scroll <= overflow.client + 1
+    // The viewport is asserted, not assumed: if the override ever stops working this must fail
+    // loudly rather than quietly go back to measuring a 496px window.
+    if (overflow.client !== PHONE_WIDTH) {
+      fail(`the viewport is ${overflow.client}px, not ${PHONE_WIDTH}px — this is not testing a phone`);
+    } else if (overflow.scroll > overflow.client + 1) {
+      fail(`the page is ${overflow.scroll}px wide in a ${overflow.client}px viewport`);
+    } else {
+      pass();
+    }
+
+    // The manifest and the service worker are what make the portal installable at all (PL-09).
+    step('the app is installable: a manifest is linked and complete');
+    const manifest = await evaluate(`
+      const link = document.querySelector('link[rel="manifest"]');
+      if (!link) return null;
+      const res = await fetch(link.href);
+      if (!res.ok) return { status: res.status };
+      const m = await res.json();
+      return {
+        name: m.name,
+        display: m.display,
+        start_url: m.start_url,
+        icons: (m.icons || []).map((i) => i.sizes + (i.purpose ? ':' + i.purpose : '')),
+      };
+    `);
+    const manifestOk =
+      manifest &&
+      manifest.display === 'standalone' &&
+      /Portal/.test(manifest.name ?? '') &&
+      manifest.icons?.includes('192x192') &&
+      manifest.icons?.includes('512x512') &&
+      manifest.icons?.some((i) => i.includes('maskable'));
+    manifestOk ? pass() : fail(`the manifest is missing or incomplete: ${JSON.stringify(manifest)}`);
+
+    step('every icon the manifest promises actually exists');
+    const iconsOk = await evaluate(`
+      const link = document.querySelector('link[rel="manifest"]');
+      const m = await (await fetch(link.href)).json();
+      const results = [];
+      for (const icon of m.icons || []) {
+        const url = new URL(icon.src, link.href).href;
+        const res = await fetch(url);
+        results.push({ src: icon.src, status: res.status, type: res.headers.get('content-type') });
+      }
+      return results;
+    `);
+    const badIcons = (iconsOk ?? []).filter(
+      (i) => i.status !== 200 || !/image\/png/.test(i.type ?? ''),
+    );
+    badIcons.length === 0
       ? pass()
-      : fail(`the page is ${overflow.scroll}px wide in a ${overflow.client}px viewport`);
+      : fail(`icons missing or not PNG: ${JSON.stringify(badIcons)}`);
+
+    // Headless Chrome never fires beforeinstallprompt, so the button would never appear on its own
+    // and this whole path would go untested. Synthesising the event is the only way to see it.
+    step('the Install button appears when the browser offers a prompt');
+    const appeared = await waitFor('the install button', () =>
+      evaluate(`
+        if (!window.__fakePromptFired) {
+          const e = new Event('beforeinstallprompt');
+          e.prompt = () => Promise.resolve();
+          e.userChoice = Promise.resolve({ outcome: 'dismissed' });
+          window.__fakePrompt = e;
+          window.dispatchEvent(e);
+          window.__fakePromptFired = true;
+        }
+        const btn = document.querySelector('.install-btn');
+        return btn ? btn.textContent.trim() : null;
+      `),
+    ).catch(() => null);
+    appeared && /Install/.test(appeared)
+      ? pass()
+      : fail(`expected an Install button, saw ${JSON.stringify(appeared)}`);
+
+    step(`the Install button does not break a ${PHONE_WIDTH}px screen`);
+    const withButton = await evaluate(`
+      const doc = document.documentElement;
+      const label = document.querySelector('.install-btn-label');
+      return {
+        scroll: doc.scrollWidth,
+        client: doc.clientWidth,
+        // Below 420px the word is hidden and the arrow carries the meaning, so the top bar fits.
+        labelHidden: label ? label.getBoundingClientRect().width <= 1 : null,
+      };
+    `);
+    if (withButton.client !== PHONE_WIDTH) {
+      fail(`the viewport is ${withButton.client}px, not ${PHONE_WIDTH}px`);
+    } else if (withButton.scroll > withButton.client + 1) {
+      fail(`the page is ${withButton.scroll}px wide in a ${withButton.client}px viewport`);
+    } else if (withButton.labelHidden !== true) {
+      fail('the "Install" word should collapse to just the arrow on a phone, and did not');
+    } else {
+      pass();
+    }
+
+    step('declining the prompt puts the button away');
+    await evaluate(`document.querySelector('.install-btn').click(); return true;`);
+    const buttonGone = await waitFor('the button to go', () =>
+      evaluate('return document.querySelector(".install-btn") ? null : "gone"'),
+    ).catch(() => null);
+    buttonGone
+      ? pass()
+      : fail('the Install button stayed after the prompt was used — the event cannot be fired twice');
 
     step('an administrator can add an application');
     await evaluate(`

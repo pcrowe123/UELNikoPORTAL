@@ -123,3 +123,26 @@ RLS enabled with **no** policy is the whole fix, and is deliberate rather than a
 linter now reports "RLS enabled, no policy" as INFO, and that is the intended end state. `supabase
 db push` connects as the database owner and the service-role key bypasses RLS, so the migration
 runner never needed a policy. *Decided 30 September 2026, `0002_harden.sql`.*
+
+**D17 — The portal is an installable PWA, and its service worker caches the shell but never the
+tiles.** A launcher earns its keep by being one tap away, so it ships a web app manifest, icons and
+a service worker, with an **Install** button in the top bar (PL-09).
+
+Two choices inside that are worth writing down.
+
+*`registerType: 'autoUpdate'`, where the sibling stock app uses `'prompt'`.* Stock is an offline
+counting tool and must never reload under somebody mid-count, so it downloads a new version and
+offers an "Update app" button. The portal has no in-progress work to lose — it is a list of links —
+so it updates silently and skips the button. A launcher with a permanent "Update app" chip in the
+corner would be all chrome and no content.
+
+*The service worker precaches the app shell only.* The tile list is fetched from Supabase on every
+load and is deliberately not cached. A launcher that opened instantly and showed an application
+that has since moved, been renamed or been retired would be worse than one that takes another
+second — the whole value of the tile list being data (CI-01) is that a change reaches people at
+once.
+
+The Install button hides itself rather than going grey when there is nothing to offer, because a
+disabled button invites a second and third click. On iOS it opens instructions instead: Apple does
+not implement `beforeinstallprompt` and does not let a site install itself, so the honest thing is
+to say where the Share menu is. *Assumed, 30 September 2026.*

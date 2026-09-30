@@ -43,6 +43,24 @@ open in a background tab, ctrl-click the same, right-click to copy the address.
 
 It all works on a phone, one tile per row.
 
+## Putting the portal on your phone or desktop
+
+There is an **Install** button at the top right. It puts the portal among your other apps — on a
+phone's home screen, or on a Windows task bar or Mac dock — so it is one tap rather than a bookmark
+you have to go looking for. It opens without the browser's address bar and tabs, which makes it feel
+like an app rather than a web page.
+
+On an **iPhone or iPad** the button cannot do it for you: Apple does not let a website install
+itself. Tapping it shows you the three steps instead — **Share** (the square with an arrow), then
+**Add to Home Screen**, then **Add**. It has to be Safari; Chrome and Firefox on an iPhone cannot
+add to the home screen.
+
+If you do not see the button at all, it is one of two things: the portal is already installed, or the
+browser you are using cannot install it. The button hides rather than sitting there greyed out.
+
+Installing changes nothing about how you sign in, and it does not store anything about the
+applications on your device. It is a smarter shortcut, nothing more.
+
 ### A tile that says it needs fixing
 
 Now and again a tile may appear greyed out, saying it has no usable web address. That means somebody

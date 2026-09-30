@@ -28,6 +28,7 @@ portal does not sign anyone in to anything, and signing out of it does not sign 
 | PL-06 | The page works on a phone: one tile per row, nothing clipped, at 390px. |
 | PL-07 | A tile whose address is unusable is shown as broken rather than hidden, so somebody fixes it (D5). |
 | PL-08 | The page says plainly that each application asks for its own sign-in. |
+| PL-09 | The portal can be installed: an **Install** button puts it on a phone's home screen or a desktop's task bar, where it opens without browser chrome. The button appears only when it can do something — never once installed, and never in a browser that cannot. On iOS, where no browser may install a site itself, it explains the Share → Add to Home Screen route instead. |
 
 ## 3. Signing in (AU)
 

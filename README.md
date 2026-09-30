@@ -7,6 +7,9 @@ through to whichever you need. That is the whole of it: the portal is a launcher
 single sign-on. Each application still asks for its own login, which is where access to it is
 actually decided.
 
+Installable: an **Install** button puts it on a phone home screen or a desktop dock, where it opens
+without browser chrome (D17).
+
 Built to the same pattern as the sibling UEL applications: Vite + React 19 + TypeScript, Supabase
 for authentication and storage, deployed as an assets-only Cloudflare Worker.
 
@@ -15,9 +18,8 @@ for authentication and storage, deployed as an assets-only Cloudflare Worker.
 **Live** at https://uelnikoportal.com since 30 September 2026, on its Supabase project
 `zeujzuxkjozlelayerkz` with the schema applied and the seven tiles seeded.
 
-Nobody has an account on it yet. `docs/PLAN.md` lists what is left: pointing Supabase Auth at Resend
-so invitations can send, allow-listing the portal's address for auth redirects, and creating the
-first administrator.
+Sender mail, auth redirects and the first administrator account are all set up. `docs/PLAN.md` has
+the detail and what is left — inviting everybody else.
 
 The office network blocks newly registered domains for a few days, so from inside the office use
 https://uelnikoportal.pcrowe123.workers.dev — the same Worker, the same site. See the end of
@@ -40,11 +42,12 @@ sign in with any email and any password. The top bar says **Demo** so there is n
 | | |
 |---|---|
 | `npm run dev` | the app, on a local dev server |
-| `npm test` | the unit tests (the pure link logic) |
+| `npm test` | the unit tests (the pure link and install logic) |
 | `npm run typecheck` | TypeScript over `src` and `scripts` |
 | `npm run build` | the production bundle into `dist/` |
 | `npm run e2e` | drives a real headless browser against a demo build |
 | `npm run verify:rls` | proves the live database still refuses what it should |
+| `npm run icons` | regenerates the PWA icons from the launcher-grid mark |
 | `npm run deploy` | build, then `wrangler deploy` — the office PC only |
 | `node scripts/setup-supabase.mjs --status` | what is configured and what is not |
 | `node scripts/setup-supabase.mjs --link` | link this folder to the Supabase project |

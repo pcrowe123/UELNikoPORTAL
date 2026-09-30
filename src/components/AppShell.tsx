@@ -3,6 +3,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { APP } from '../config';
 import { ROLE_LABELS } from '../backend/types';
+import { InstallButton } from './InstallButton';
 import { useApp } from '../state/AppContext';
 
 export function AppShell() {
@@ -25,6 +26,7 @@ export function AppShell() {
           ) : null}
         </nav>
         <div className="topbar-right">
+          <InstallButton />
           {!isCloud ? (
             <span className="demo-pill" title="Nothing is saved to the cloud">
               Demo
