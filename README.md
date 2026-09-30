@@ -12,12 +12,16 @@ for authentication and storage, deployed as an assets-only Cloudflare Worker.
 
 ## Status
 
-Written, and running against its real Supabase project (`zeujzuxkjozlelayerkz`, created
-30 September 2026) with the schema applied and the seven tiles seeded. **Not deployed yet**, and
-there are no accounts on it.
+**Live** at https://uelnikoportal.com since 30 September 2026, on its Supabase project
+`zeujzuxkjozlelayerkz` with the schema applied and the seven tiles seeded.
 
-`docs/PLAN.md` lists what is left: pushing the first commit, pointing Supabase Auth at Resend so
-invitations can send, creating the first administrator, and the deploy.
+Nobody has an account on it yet. `docs/PLAN.md` lists what is left: pointing Supabase Auth at Resend
+so invitations can send, allow-listing the portal's address for auth redirects, and creating the
+first administrator.
+
+The office network blocks newly registered domains for a few days, so from inside the office use
+https://uelnikoportal.pcrowe123.workers.dev — the same Worker, the same site. See the end of
+`docs/PLAN.md`; the deployment is correct and there is nothing to fix.
 
 ## Running it
 

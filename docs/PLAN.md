@@ -42,7 +42,16 @@ immediately even holding a valid token (SE-02).
   password exists **only** in `.env`; if it is lost it has to be reset from the dashboard.
 - **Schema** — `0001_init.sql` and `0002_harden.sql` applied. The seven tiles and the starting
   settings are seeded. No accounts yet, and the activity log is empty.
-- **Domain `uelnikoportal.com`** — registered (confirmed by Patrick, 30 September 2026).
+- **Domain `uelnikoportal.com`** — registered 30 September 2026, and the zone is in this
+  Cloudflare account (account `f96d22a4a289d4a088d3539d2e84dc4f`, `pcrowe123@gmail.com`).
+- **Deployed** — Worker `uelnikoportal`, 30 September 2026. Both custom domains attached; Cloudflare
+  created the DNS records and issued the certificate. Verified live: the portal's own HTML is
+  served, the SPA fallback works (`/login` and `/admin` both return 200 rather than a 404), `www`
+  serves too, and the TLS chain verifies.
+  - https://uelnikoportal.com
+  - https://www.uelnikoportal.com
+  - https://uelnikoportal.pcrowe123.workers.dev (keeps working, and is not DNS-blocked in the
+    office — see the note at the end)
 - **GitHub `pcrowe123/UELNikoPORTAL`** — created, and the first commit is pushed to `main`
   (30 September 2026). Mind the casing: the repository is `UELNikoPORTAL`. The mixed-case spelling
   is a GitHub redirect and works, but `origin` is set to the canonical name so nothing depends on
@@ -84,21 +93,7 @@ to `<APP_URL>/reset-password`, and Supabase **refuses a redirect it has not been
 it silently falls back to the Site URL instead, which is `http://localhost:3000` on a new project.
 The invitation still arrives; it just takes the person somewhere that is not the portal.
 
-**3. Confirm the Cloudflare zone, then deploy.** `wrangler.jsonc` claims `uelnikoportal.com` and
-`www.uelnikoportal.com` with `custom_domain: true`, which makes Cloudflare create the DNS records
-and the certificate on deploy — but **only if the zone is already in this Cloudflare account**. If
-the domain is registered somewhere else, move the nameservers to Cloudflare first, or take the two
-`routes` out and use the workers.dev address to begin with. Then, from the office PC:
-
-```
-npm run deploy
-```
-
-Deploy **before** inviting anybody. An invitation link points at `uelnikoportal.com`, and Supabase
-expires it after 24 hours — so sending one while the domain still serves nothing means the first
-thing Patrick does with the portal is click a link to a site that does not exist yet.
-
-**4. The first administrator — last, not first.** Nobody can sign in until this is run, and it
+**3. The first administrator — last, not first.** Nobody can sign in until this is run, and it
 cannot be done from the app, because there is no signup page (D4).
 
 Decided with Patrick, 30 September 2026: the account is **`pcrowe123@gmail.com`**, and the
@@ -113,7 +108,7 @@ It **sends a real email**. Patrick gets a link and chooses his own password; nob
 it. That address is then his portal login — unrelated to his accounts on any of the seven
 applications (D2).
 
-**5. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
+**4. Invite everyone else** as `member`, and tell them the portal exists. `docs/USER_GUIDE.md` is
 written for them and explains the one thing worth understanding — that the portal password is not
 the same as their password for any of the applications.
 
@@ -129,19 +124,36 @@ the same as their password for any of the applications.
   the Admin screen — not a migration and not a release (CI-01). Do not add it to `0001_init.sql`
   or to `src/backend/seed.ts`.
 
-## A note on the office network
+## The office network is blocking the site (and the site is fine)
 
-Worth knowing before anyone reports the new site as broken: the FortiGate on the office network
-blocks newly registered domains for the first few days of their life, and returns
-`208.91.112.55` — `fortinet-block-page-55.fortinet.com` — for them. `uelnikobooking.com` did exactly
-this on the day it went live and the deployment was entirely fine. `uelnikoportal.com` is newer
-still, so expect it.
+**This is happening right now, and it was confirmed by measurement on the day of the deploy.** The
+FortiGate on the office network blocks newly registered domains for the first days of their life.
+From inside the office, `uelnikoportal.com` resolves to `208.91.112.55` —
+`fortinet-block-page-55.fortinet.com` — and the browser shows nothing.
 
-If it does not resolve from inside the office just after the first deploy, check from a phone on
-mobile data before changing anything, or go straight to the Cloudflare edge:
+Nothing about the deployment is wrong. Measured on 30 September 2026, minutes after deploying:
 
 ```
-curl -s -o /dev/null -w "%{http_code}\n" --resolve uelnikoportal.com:443:104.21.89.39 https://uelnikoportal.com
+office resolver   -> 208.91.112.55                      (Fortinet block page)
+Cloudflare DNS    -> 104.21.47.253, 172.67.174.220      (the real edge)
 ```
 
-Do not go changing DNS or redeploying over it.
+and going straight to the edge, past the office resolver, returns the portal:
+
+```
+curl -sI --resolve uelnikoportal.com:443:104.21.47.253 https://uelnikoportal.com | head -1
+# HTTP/2 200 — and curl verified the TLS chain, so the certificate is right too
+```
+
+`uelnikobooking.com` did exactly the same thing on the day it went live and cleared on its own.
+
+**Until it clears**, two things work from any office machine:
+
+- **https://uelnikoportal.pcrowe123.workers.dev** — the same Worker, the same site, a domain the
+  FortiGate is not blocking. Use this to test, and to sign in if the invitation arrives before the
+  block lifts.
+- A phone on mobile data.
+
+It will clear by itself in a few days, or IT can allow the domain. **Do not change DNS and do not
+redeploy over it** — the deployment is correct and the network is lying about where the domain
+points.
